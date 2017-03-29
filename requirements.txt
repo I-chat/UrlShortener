@@ -1,0 +1,5 @@
+coverage==4.3.4
+Flask==0.12
+Flask-Migrate==2.0.3
+Flask-SQLAlchemy==2.2
+python-env==1.0.0

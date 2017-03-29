@@ -1,0 +1,17 @@
+# Folders #
+__pycache__
+migrations
+
+# Logs and databases #
+######################
+*.sqlite
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+*.pyc
+*.coverage
+
+# Private files #
+.env
