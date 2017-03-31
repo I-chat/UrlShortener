@@ -2,6 +2,8 @@ import unittest
 from flask import current_app
 from app import create_app, db
 from app.models import User, ShortUrl, LongUrl
+from flask_sqlalchemy import sqlalchemy
+from time import sleep
 
 
 class AppModelTestCase(unittest.TestCase):
@@ -95,3 +97,11 @@ class AppModelTestCase(unittest.TestCase):
         self.assertEqual(self.s.long_url_id, self.long_url2.id)
         self.assertNotEqual(self.s.long_url_id, self.long_url.id)
         self.assertEqual(self.s2.long_url_id, self.long_url.id)
+
+    def test_longurl_user_relationship(self):
+        self.long_url.users.append(self.u)
+        self.long_url.users.append(self.u2)
+        self.u.long_urls.append(self.long_url2)
+        db.session.add_all([self.long_url, self.long_url2, self.u, self.u2])
+        self.assertEqual(self.long_url.users, [self.u, self.u2])
+        self.assertEqual(self.u.long_urls, [self.long_url, self.long_url2])
