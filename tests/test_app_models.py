@@ -1,7 +1,8 @@
 import unittest
-from flask import current_app
 from app import create_app, db
 from app.models import User, ShortUrl, LongUrl
+from datetime import datetime
+from flask import current_app
 from flask_sqlalchemy import sqlalchemy
 from time import sleep
 
@@ -13,11 +14,9 @@ class AppModelTestCase(unittest.TestCase):
         self.app_context.push()
         db.create_all()
         self.u = User(first_name='seni', last_name='abdulahi',
-                      username='ichat', email='seni@andel.com',
-                      password='123456')
+                      email='seni@andel.com', password='123456')
         self.u2 = User(first_name='seni', last_name='abdulahi',
-                       username='ichat', email='seni2@andel.com',
-                       password='123456')
+                       email='seni2@andel.com', password='123456')
         self.s = ShortUrl(short_url="nfdjf")
         self.s2 = ShortUrl(short_url="hjf97")
         self.long_url = LongUrl(long_url=""
@@ -62,6 +61,14 @@ class AppModelTestCase(unittest.TestCase):
         self.assertIsNone(self.u.verify_auth_token(u_token))
         self.assertIsNone(self.u.verify_auth_token('jdjdje230920093944334j'))
 
+    def test_shorturl_time_saving(self):
+        self.long_url.short_urls.append(self.s)
+        self.u.short_urls.append(self.s)
+        self.long_url.users.append(self.u)
+        db.session.add(self.s)
+        db.session.commit()
+        self.assertIs(type(self.s.when), datetime)
+
     def test_saving_user_to_db(self):
         self.u.save()
         db_u = User.query.filter_by(email='seni@andel.com').first()
@@ -97,6 +104,18 @@ class AppModelTestCase(unittest.TestCase):
         self.assertEqual(self.s.long_url_id, self.long_url2.id)
         self.assertNotEqual(self.s.long_url_id, self.long_url.id)
         self.assertEqual(self.s2.long_url_id, self.long_url.id)
+
+    def test_shorturl_user_relationship(self):
+        self.u.short_urls.append(self.s)
+        self.u2.short_urls.append(self.s)
+        self.u.short_urls.append(self.s2)
+        self.long_url.short_urls.append(self.s)
+        self.long_url.short_urls.append(self.s2)
+        db.session.add_all([self.u, self.u2, self.s, self.s2])
+        db.session.commit()
+        self.assertEqual(self.s.user_id, self.u2.id)
+        self.assertNotEqual(self.s.user_id, self.u.id)
+        self.assertEqual(self.s2.user_id, self.u.id)
 
     def test_longurl_user_relationship(self):
         self.long_url.users.append(self.u)
