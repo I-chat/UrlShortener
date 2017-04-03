@@ -1,5 +1,6 @@
 from . import login_manager
 from app import db
+from datetime import datetime
 from flask import current_app
 from flask_login import UserMixin
 from itsdangerous import (TimedJSONWebSignatureSerializer
@@ -20,7 +21,6 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(20), nullable=False)
     last_name = db.Column(db.String(20), nullable=False)
-    username = db.Column(db.String(64), nullable=False)
     email = db.Column(db.String(64), unique=True, index=True, nullable=False)
     password_hash = db.Column(db.String(128))
     short_urls = db.relationship("ShortUrl", back_populates="user")
@@ -60,7 +60,7 @@ class User(UserMixin, db.Model):
         return user
 
     def __repr__(self):
-        return "<User(username='%s')>" % self.email
+        return "<User(email='%s')>" % self.email
 
 
 class ShortUrl(db.Model):
@@ -68,6 +68,7 @@ class ShortUrl(db.Model):
 
     short_url = db.Column(db.String, primary_key=True)
     is_active = db.Column(db.Boolean, default=True)
+    when = db.Column(db.DateTime, default=datetime.now(), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     user = db.relationship("User", back_populates="short_urls")
     long_url_id = db.Column(db.Integer, db.ForeignKey('long_url.id'),
