@@ -14,9 +14,9 @@ class AppModelTestCase(unittest.TestCase):
         self.app_context.push()
         db.create_all()
         self.user = User(first_name='seni', last_name='abdulahi',
-                         email='seni@andel.com', password='123456')
+                         email='seni@andela.com')
         self.user2 = User(first_name='seni', last_name='abdulahi',
-                          email='seni2@andel.com', password='123456')
+                          email='seni2@andel.com')
         self.short_url = ShortUrl(short_url="nfdjf")
         self.short_url2 = ShortUrl(short_url="hjf97")
         self.long_url = LongUrl(long_url=""
@@ -29,21 +29,27 @@ class AppModelTestCase(unittest.TestCase):
         self.app_context.pop()
 
     def test_password_setter(self):
+        self.user.password = '123456'
         self.assertIsNotNone(self.user.password_hash)
 
     def test_no_password_getter(self):
+        self.user.password = '123456'
         with self.assertRaises(AttributeError):
             self.user.password
 
     def test_password_verification(self):
+        self.user.password = '123456'
         self.assertTrue(self.user.verify_password('123456'))
         self.assertFalse(self.user.verify_password('password'))
 
     def test_password_salts_are_random(self):
+        self.user.password = '123456'
+        self.user2.password = '123456'
         self.assertTrue(self.user.password_hash != self.user2.password_hash)
 
     def test_saving_null_to_users_table(self):
-        user = User(password="123456")
+        user = User(first_name='seni', email='seni@andela.com')
+        user.password = '123456'
         with self.assertRaises(sqlalchemy.exc.IntegrityError):
             db.session.add(user)
             db.session.commit()
@@ -73,7 +79,7 @@ class AppModelTestCase(unittest.TestCase):
 
     def test_saving_user_to_db(self):
         self.user.save()
-        db_user = User.query.filter_by(email='seni@andel.com').first()
+        db_user = User.query.filter_by(email='seni@andela.com').first()
         self.assertIs(self.user, db_user)
         self.assertIsInstance(db_user, User)
 
