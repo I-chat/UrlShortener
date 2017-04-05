@@ -1,4 +1,3 @@
-from . import login_manager
 from app import db
 from datetime import datetime
 from flask import current_app

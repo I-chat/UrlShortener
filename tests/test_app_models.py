@@ -14,7 +14,7 @@ class AppModelTestCase(unittest.TestCase):
         self.app_context.push()
         db.create_all()
         self.user = User(first_name='seni', last_name='abdulahi',
-                         email='seni@andel.com', password='123456')
+                         email='seni@andela.com', password='123456')
         self.user2 = User(first_name='seni', last_name='abdulahi',
                           email='seni2@andel.com', password='123456')
         self.short_url = ShortUrl(short_url="nfdjf")
@@ -73,7 +73,7 @@ class AppModelTestCase(unittest.TestCase):
 
     def test_saving_user_to_db(self):
         self.user.save()
-        db_user = User.query.filter_by(email='seni@andel.com').first()
+        db_user = User.query.filter_by(email='seni@andela.com').first()
         self.assertIs(self.user, db_user)
         self.assertIsInstance(db_user, User)
 
