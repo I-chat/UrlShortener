@@ -1,24 +1,26 @@
 #!flask/bin/python
-from app import create_app, db
-from app.models import User, LongUrl, ShortUrl
+import os
+import coverage
+import unittest
+
 from flask_script import Manager, Shell
 from flask_migrate import Migrate, MigrateCommand
-import os
 
+from app import create_app, db
 
 COV = None
 if os.environ.get('FLASK_COVERAGE'):
-    import coverage
     COV = coverage.coverage(branch=True, include='app/*')
     COV.start()
 
-app = create_app('default')
+
+app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 manager = Manager(app)
 migrate = Migrate(app, db)
 
 
 def make_shell_context():
-    return dict(app=app, db=db, User=User, LongUrl=LongUrl, ShortUrl=ShortUrl)
+    return dict(app=app)
 
 
 @manager.command
@@ -28,14 +30,13 @@ def test(coverage=False):
         import sys
         os.environ['FLASK_COVERAGE'] = '1'
         os.execvp(sys.executable, [sys.executable] + sys.argv)
-    import unittest
     tests = unittest.TestLoader().discover('tests')
     unittest.TextTestRunner(verbosity=2).run(tests)
     if COV:
         COV.stop()
         COV.save()
         print('Coverage Summary:')
-        COV.report()
+        COV.report(show_missing=True)
         basedir = os.path.abspath(os.path.dirname(__file__))
         covdir = os.path.join(basedir, 'tmp/coverage')
         COV.html_report(directory=covdir)
