@@ -40,7 +40,7 @@ def new_user():
     try:
         register(request.json)
     except MultipleInvalid:
-        abort(400, "Incomplete number of reqired keys provided.")
+        abort(400, "Incomplete number of required keys provided.")
 
     first_name = request.json.get('firstname')
     last_name = request.json.get('lastname')
@@ -52,7 +52,7 @@ def new_user():
         abort(400, "password and confirm_password do not match.")
 
     if User.query.filter_by(email=email).first() is not None:
-        abort(400, "User already registered.Try login")  # existing user
+        abort(400, "User already registered.Try login.")  # existing user
 
     user = User(email=email, first_name=first_name,
                 last_name=last_name)
