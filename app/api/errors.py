@@ -26,8 +26,8 @@ def bad_request(e):
 def bad_request(e):
     response = jsonify({
         'error': '403 Forbidden',
-        'message': "Authentication required! "
-                   "Anonymous users are not allowed access to this resource."
+        'message': "Permission required! "
+                   "You are not allowed access to this resource."
         })
     response.status_code = 403
     return response

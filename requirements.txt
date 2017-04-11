@@ -1,5 +1,10 @@
 coverage==4.3.4
 Flask==0.12
+Flask-HTTPAuth==3.2.2
+Flask-Login==0.4.0
 Flask-Migrate==2.0.3
+Flask-Script==2.0.5
 Flask-SQLAlchemy==2.2
 python-env==1.0.0
+validators==0.11.2
+voluptuous==0.9.3
