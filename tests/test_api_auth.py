@@ -55,9 +55,8 @@ class ApiAuthentication(unittest.TestCase):
         response = self.client.get(url_for('api.get_token'), headers=header)
         json_response = json.loads(response.data.decode('utf-8'))
         msg = json_response['message']
-        self.assertEqual(msg, 'Authentication required!'
-                         ' Anonymous users are not allowed access to this'
-                         ' resource.')
+        self.assertEqual(msg, 'Permission required! You are not allowed'
+                         ' access to this resource.')
         self.assertEqual(response.status_code, 403)
 
     def test_invalid_user(self):
