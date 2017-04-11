@@ -1,3 +1,4 @@
+from ..models import User, ShortUrl
 from flask import abort
 from voluptuous import Schema, Required
 from validators import url, email, validator
@@ -38,6 +39,15 @@ def password_string(value):
     abort(400, "Invalid password format. Passwords can only be strings.")
 
 
+def check_vanity_str(value):
+    short_url = ShortUrl.query.filter_by(short_url=value).first()
+    if type(value) is str and len(value) > 0 and not short_url:
+        return value
+    elif short_url:
+        abort(400, "Vanity string already in use. Pick another.")
+    abort(400, "Invalid input. Vanity string can only be a non empty string.")
+
+
 register = Schema({
     Required('firstname'): name_string,
     Required('lastname'): name_string,
@@ -47,5 +57,6 @@ register = Schema({
 }, extra=True)
 
 valid_url = Schema({
-    Required('url'): url_string
+    Required('url'): url_string,
+    'vanity_string': check_vanity_str,
 })
