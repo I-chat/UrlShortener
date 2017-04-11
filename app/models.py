@@ -15,6 +15,13 @@ relationship_table = db.Table('relationship',
                                         nullable=False))
 
 
+log_table = db.Table('visits', db.Column('short_url_id', db.Integer,
+                                         db.ForeignKey('short_url.id'),
+                                         nullable=False),
+                     db.Column('log_id', db.Integer, db.ForeignKey(
+                                    'activity_logs.id'), nullable=False))
+
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -65,14 +72,19 @@ class User(UserMixin, db.Model):
 class ShortUrl(db.Model):
     __tablename__ = 'short_url'
 
-    short_url = db.Column(db.String, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    short_url = db.Column(db.String, unique=True)
     is_active = db.Column(db.Boolean, default=True)
+    no_of_visits = db.Column(db.Integer, default=0)
+    deleted = db.Column(db.Boolean(), default=False, index=True)
     when = db.Column(db.DateTime, default=datetime.now(), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     user = db.relationship("User", back_populates="short_urls")
     long_url_id = db.Column(db.Integer, db.ForeignKey('long_url.id'),
                             nullable=False)
     long_url = db.relationship("LongUrl", back_populates="short_urls")
+    logs = db.relationship('UrlActivityLogs', secondary=log_table,
+                           back_populates='short_urls')
 
     def __repr__(self):
         return "<ShortUrl(short_url='%s')>" % self.short_url
@@ -82,9 +94,23 @@ class LongUrl(db.Model):
     __tablename__ = 'long_url'
     id = db.Column(db.Integer, primary_key=True)
     long_url = db.Column(db.String, unique=True)
+    no_of_visits = db.Column(db.Integer, default=0)
     users = db.relationship("User", secondary=relationship_table,
                             back_populates="long_urls")
     short_urls = db.relationship("ShortUrl", back_populates="long_url")
 
     def __repr__(self):
         return "<LongUrl(long_url='%s')>" % self.long_url
+
+
+class UrlActivityLogs(db.Model):
+    __tablename__ = 'activity_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    ip = db.Column(db.String(15), nullable=False)
+    country_name = db.Column(db.String(64))
+    region_name = db.Column(db.String(64))
+    city = db.Column(db.String(64))
+    latitude = db.Column(db.Float(6))
+    longitude = db.Column(db.Float(6))
+    short_urls = db.relationship('ShortUrl', secondary=log_table,
+                                 back_populates='logs')
