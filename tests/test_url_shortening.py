@@ -160,3 +160,33 @@ class ApiShorten(unittest.TestCase):
         self.assertEqual(short_url, short_url2)
         self.assertEqual(201, shorten_response_with_token_auth.status_code)
         self.assertEqual(201, shorten_response_with_token_auth2.status_code)
+
+    def test_user_shortening_with_existing_vanity_string(self):
+        self.user.save()
+        post_data4 = json.dumps({
+            "url": "http://www.google.com",
+            "vanity_string": "python"
+            })
+        email_header = self.api_email_auth_headers('ichiato@yahoo.com',
+                                                   'password')
+        token_response = self.client.get(url_for('api.get_token'),
+                                         headers=email_header)
+        json_token_response = json.loads(token_response.data.decode('utf-8'))
+        token = json_token_response['token']
+        token_header = self.api_token_auth_headers(token)
+        shorten_response_with_token_auth = self.client.post(
+                            url_for('api.shorten_url'), headers=token_header,
+                            data=self.post_data3)
+        shorten_response_with_token_auth2 = self.client.post(
+                            url_for('api.shorten_url'), headers=token_header,
+                            data=post_data4)
+        json_shorten_response_with_token = json.loads(
+            shorten_response_with_token_auth.data.decode('utf-8'))
+        json_shorten_response_with_token2 = json.loads(
+            shorten_response_with_token_auth2.data.decode('utf-8'))
+        msg = json_shorten_response_with_token2['message']
+        self.assertIn('short_url', json_shorten_response_with_token)
+        self.assertEqual(201, shorten_response_with_token_auth.status_code)
+        self.assertEqual(400, shorten_response_with_token_auth2.status_code)
+        self.assertEqual(msg, 'The request is invalid or inconsistent.'
+                         ' Vanity string already in use. Pick another.')
