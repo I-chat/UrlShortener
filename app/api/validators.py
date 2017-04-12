@@ -40,11 +40,8 @@ def password_string(value):
 
 
 def check_vanity_str(value):
-    short_url = ShortUrl.query.filter_by(short_url=value).first()
-    if type(value) is str and len(value) > 0 and not short_url:
+    if type(value) is str and len(value) > 0:
         return value
-    elif short_url:
-        abort(400, "Vanity string already in use. Pick another.")
     abort(400, "Invalid input. Vanity string can only be a non empty string.")
 
 
