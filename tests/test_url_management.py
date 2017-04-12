@@ -1,9 +1,10 @@
 import unittest
-from flask import current_app, url_for
 from app import create_app, db
 from app.models import User
 from base64 import b64encode
+from flask import current_app, url_for
 import json
+from time import sleep
 
 
 class ApiShorten(unittest.TestCase):
@@ -51,12 +52,15 @@ class ApiShorten(unittest.TestCase):
         shorten_response_with_token_auth = self.client.post(
                             url_for('api.shorten_url'), headers=token_header,
                             data=post_data)
+        sleep(2)
         shorten_response_with_token_auth2 = self.client.post(
                             url_for('api.shorten_url'), headers=token_header,
                             data=post_data2)
+        sleep(2)
         shorten_response_with_token_auth3 = self.client.post(
                             url_for('api.shorten_url'), headers=token_header,
                             data=post_data3)
+        sleep(2)
         shorten_response_with_token_auth4 = self.client.post(
                             url_for('api.shorten_url'), headers=token_header,
                             data=post_data4)
@@ -158,6 +162,46 @@ class ApiShorten(unittest.TestCase):
         self.assertTrue(response.status_code == 404)
         self.assertEqual(msg, 'Resource not found')
 
+    def test_shorturl_redirection(self):
+        token_header = self.get_auth_token()
+        responses = self.shorten_4_url()
+        post_data_response = json.loads(responses[0]
+                                        .data.decode('utf-8'))
+        short_url = post_data_response['short_url']
+        response = self.client.get(url_for('api.get_url',
+                                   shorturl=short_url[22:]),
+                                   headers=token_header)
+        self.assertEqual(302, response.status_code)
+        self.assertIn('http://www.andela.com', str(response.data))
+
+    def test_inactive_shorturl_redirection(self):
+        responses = self.shorten_4_url()
+        token_header = self.get_auth_token()
+        response = self.client.put(url_for('api.toogle_is_active',
+                                           id=1), headers=token_header)
+        post_data_response = json.loads(responses[0]
+                                        .data.decode('utf-8'))
+        short_url = post_data_response['short_url']
+        response = self.client.get(url_for('api.get_url',
+                                   shorturl=short_url[22:]),
+                                   headers=token_header)
+        self.assertEqual(400, response.status_code)
+        self.assertNotIn('http://www.andela.com', str(response.data))
+
+    def test_deleted_shorturl_redirection(self):
+        responses = self.shorten_4_url()
+        token_header = self.get_auth_token()
+        response = self.client.delete(url_for('api.delete_urls', id=1),
+                                      headers=token_header)
+        post_data_response = json.loads(responses[0]
+                                        .data.decode('utf-8'))
+        short_url = post_data_response['short_url']
+        response = self.client.get(url_for('api.get_url',
+                                   shorturl=short_url[22:]),
+                                   headers=token_header)
+        self.assertEqual(404, response.status_code)
+        self.assertNotIn('http://www.andela.com', str(response.data))
+
     def test_get_shorturl_by_popularity(self):
         token_header = self.get_auth_token()
         responses = self.shorten_4_url()
@@ -173,12 +217,18 @@ class ApiShorten(unittest.TestCase):
         post_data_response4 = json.loads(responses[3]
                                          .data.decode('utf-8'))
         short_url4 = post_data_response4['short_url']
-        self.client.get(url_for('api.get_url', shorturl=short_url[22:]))
-        self.client.get(url_for('api.get_url', shorturl=short_url[22:]))
-        self.client.get(url_for('api.get_url', shorturl=short_url[22:]))
-        self.client.get(url_for('api.get_url', shorturl=short_url2[22:]))
-        self.client.get(url_for('api.get_url', shorturl=short_url2[22:]))
-        self.client.get(url_for('api.get_url', shorturl=short_url3[22:]))
+        self.client.get(url_for('api.get_url', shorturl=short_url[22:]),
+                        headers=token_header)
+        self.client.get(url_for('api.get_url', shorturl=short_url[22:]),
+                        headers=token_header)
+        self.client.get(url_for('api.get_url', shorturl=short_url[22:]),
+                        headers=token_header)
+        self.client.get(url_for('api.get_url', shorturl=short_url2[22:]),
+                        headers=token_header)
+        self.client.get(url_for('api.get_url', shorturl=short_url2[22:]),
+                        headers=token_header)
+        self.client.get(url_for('api.get_url', shorturl=short_url3[22:]),
+                        headers=token_header)
         response = self.client.get(url_for('api.sort_urls',
                                    url_type='shorturl',
                                    sort_type='popularity'),
@@ -186,7 +236,26 @@ class ApiShorten(unittest.TestCase):
         json_response = json.loads(response.data.decode('utf-8'))
         url_list = json_response['url_list']
         self.assertEqual(200, response.status_code)
-        self.assertEqual(url_list[0]['Times_visted'], 3)
-        self.assertEqual(url_list[1]['Times_visted'], 2)
-        self.assertEqual(url_list[2]['Times_visted'], 1)
-        self.assertEqual(url_list[3]['Times_visted'], 0)
+        self.assertTrue(url_list[0]['Times_visted'] >
+                        url_list[1]['Times_visted'])
+        self.assertTrue(url_list[1]['Times_visted'] >
+                        url_list[2]['Times_visted'])
+        self.assertTrue(url_list[2]['Times_visted'] >
+                        url_list[3]['Times_visted'])
+
+    def test_get_shorturl_by_date(self):
+        token_header = self.get_auth_token()
+        responses = self.shorten_4_url()
+        response = self.client.get(url_for('api.sort_urls',
+                                   url_type='shorturl',
+                                   sort_type='date'),
+                                   headers=token_header)
+        json_response = json.loads(response.data.decode('utf-8'))
+        url_list = json_response['url_list']
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(url_list[0]['Date_added'] >
+                        url_list[1]['Date_added'])
+        self.assertTrue(url_list[1]['Date_added'] >
+                        url_list[2]['Date_added'])
+        self.assertTrue(url_list[2]['Date_added'] >
+                        url_list[3]['Date_added'])
