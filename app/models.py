@@ -77,7 +77,8 @@ class ShortUrl(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     no_of_visits = db.Column(db.Integer, default=0)
     deleted = db.Column(db.Boolean(), default=False, index=True)
-    when = db.Column(db.DateTime, default=datetime.now(), nullable=False)
+    when = db.Column(db.DateTime, default=db.func.current_timestamp(),
+                     nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     user = db.relationship("User", back_populates="short_urls")
     long_url_id = db.Column(db.Integer, db.ForeignKey('long_url.id'),
