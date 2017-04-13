@@ -1,8 +1,13 @@
-import validators
+"""URL shortening module.
+
+The module is for all endpoints that manages all services related
+to url shortening.
+"""
+
 import dotenv
 from app import db
 from . import api
-from flask import request, abort, jsonify, g, redirect, url_for
+from flask import request, abort, jsonify, g, redirect
 from ..models import User, LongUrl, ShortUrl
 from .auth import auth
 from werkzeug.exceptions import BadRequest
@@ -18,6 +23,10 @@ SITE_URL = dotenv.get('SITE_URL')
 @api.route('/shorten', methods=['POST'])
 @auth.login_required
 def shorten_url():
+    """An endpoint which shortens a long url.
+
+    It makes use of a vanity string if supplied by a registered user.
+    """
     if g.current_user.is_anonymous or not g.token_used:
         abort(403)
 
@@ -52,7 +61,7 @@ def shorten_url():
 
 
 def generate_and_save_urls(url, user, vanity_string=None):
-
+    """Help manage the generating and saving of urls."""
     if url in [x.long_url for x in user.long_urls]:
         long_url = LongUrl.query.filter_by(long_url=url).first()
         return [short_url for short_url in
@@ -73,9 +82,11 @@ def generate_and_save_urls(url, user, vanity_string=None):
 @api.route('/<shorturl>')
 @auth.login_required
 def get_url(shorturl):
-    """  Given a short url, the code looks up the short url in database
-         and if found redirects to the long url path.
-         if not found sends a 404 page not found.
+    """Redirect short_urls to their long_url version.
+
+    Given a short url, the code looks up the short url in database
+    and if found redirects to the long url path. if not found sends a 404
+    status_code.
     """
     if g.current_user.is_anonymous or not g.token_used:
         abort(403)
@@ -93,6 +104,7 @@ def get_url(shorturl):
 @api.route('/<int:id>/toogle_longurl/', methods=['PUT'])
 @auth.login_required
 def change_long_url(id):
+    """Update target url of a given short_url."""
     if g.current_user.is_anonymous or not g.token_used:
         abort(403)
 
@@ -117,6 +129,7 @@ def change_long_url(id):
 @api.route('/<int:id>/toogle_active/', methods=['PUT'])
 @auth.login_required
 def toogle_is_active(id):
+    """Deactivate or activate a users short_url."""
     if g.current_user.is_anonymous or not g.token_used:
         abort(403)
     try:
@@ -137,6 +150,7 @@ def toogle_is_active(id):
 @api.route('/<string:url_type>/<string:sort_type>')
 @auth.login_required
 def sort_urls(url_type, sort_type):
+    """Return short_urls based popularity and recently added."""
     if g.current_user.is_anonymous or not g.token_used:
         abort(403)
     if sort_type == 'popularity' and url_type == 'shorturl':
@@ -155,6 +169,7 @@ def sort_urls(url_type, sort_type):
 @api.route('/<int:id>/delete', methods=['DELETE'])
 @auth.login_required
 def delete_urls(id):
+    """Set short_url delete column to True."""
     if g.current_user.is_anonymous or not g.token_used:
         abort(403)
     try:

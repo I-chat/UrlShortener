@@ -1,14 +1,17 @@
+"""Test all database models, mapping, methods and relationships."""
 import unittest
 from app import create_app, db
 from app.models import User, ShortUrl, LongUrl
 from datetime import datetime
-from flask import current_app
 from flask_sqlalchemy import sqlalchemy
 from time import sleep
 
 
 class AppModelTestCase(unittest.TestCase):
+    """Test all database models, mapping, methods and relationships."""
+
     def setUp(self):
+        """Setup app for testing before each test case."""
         self.app = create_app('testing')
         self.app_context = self.app.app_context()
         self.app_context.push()
@@ -24,30 +27,40 @@ class AppModelTestCase(unittest.TestCase):
         self.long_url2 = LongUrl(long_url="https://repl.it/languages/python3")
 
     def tearDown(self):
+        """Delete app and db instances after each test case."""
         db.session.remove()
         db.drop_all()
         self.app_context.pop()
 
     def test_password_setter(self):
+        """Test the conversion of passwords to hashes."""
         self.user.password = '123456'
         self.assertIsNotNone(self.user.password_hash)
 
     def test_no_password_getter(self):
+        """Test that that user model cannot get password."""
         self.user.password = '123456'
         with self.assertRaises(AttributeError):
             self.user.password
 
     def test_password_verification(self):
+        """Test the user model verify_password method.
+
+        The method should return True for valid passwords and False for
+        invalid passwords.
+        """
         self.user.password = '123456'
         self.assertTrue(self.user.verify_password('123456'))
         self.assertFalse(self.user.verify_password('password'))
 
     def test_password_salts_are_random(self):
+        """Test that same passwords generates different hash values."""
         self.user.password = '123456'
         self.user2.password = '123456'
         self.assertTrue(self.user.password_hash != self.user2.password_hash)
 
     def test_saving_null_to_users_table(self):
+        """Test that that Users table raises errors for empty columns."""
         user = User(first_name='seni', email='seni@andela.com')
         user.password = '123456'
         with self.assertRaises(sqlalchemy.exc.IntegrityError):
@@ -55,9 +68,14 @@ class AppModelTestCase(unittest.TestCase):
             db.session.commit()
 
     def test_token_generation(self):
+        """Test that token are generated in bytes."""
         self.assertIsInstance(self.user.generate_auth_token(34), bytes)
 
     def test_token_verification(self):
+        """Test verification of token.
+
+        Valid tokens return True while invalid tokens return False.
+        """
         db.session.add(self.user, self.user2)
         db.session.commit()
         user_token = self.user.generate_auth_token(1)
@@ -70,6 +88,7 @@ class AppModelTestCase(unittest.TestCase):
                           user.verify_auth_token('jdjdje230920093944334j'))
 
     def test_shorturl_time_saving(self):
+        """Test that values saved to the when columns are datetime objects."""
         self.long_url.short_urls.append(self.short_url)
         self.user.short_urls.append(self.short_url)
         self.long_url.users.append(self.user)
@@ -78,17 +97,20 @@ class AppModelTestCase(unittest.TestCase):
         self.assertIs(type(self.short_url.when), datetime)
 
     def test_saving_user_to_db(self):
+        """Test that the save method of the user model saves to database."""
         self.user.save()
         db_user = User.query.filter_by(email='seni@andela.com').first()
         self.assertIs(self.user, db_user)
         self.assertIsInstance(db_user, User)
 
     def test_shorturl_not_saving_without_longurl(self):
+        """Test that ShortUrl table does not accept Null values."""
         db.session.add(self.short_url)
         with self.assertRaises(sqlalchemy.exc.IntegrityError):
             db.session.commit()
 
     def test_shorturl_is_active_defualts(self):
+        """Test that ShortUrl is_active column is set to True by default."""
         self.long_url.short_urls.append(self.short_url)
         self.user.short_urls.append(self.short_url)
         self.long_url.users.append(self.user)
@@ -99,6 +121,7 @@ class AppModelTestCase(unittest.TestCase):
         self.assertFalse(self.short_url.is_active)
 
     def test_shorturl_longurl_relationship(self):
+        """Test the many to one relationship between ShortUrl and LongUrl."""
         self.long_url.short_urls.append(self.short_url)
         self.long_url.short_urls.append(self.short_url2)
         self.user.short_urls.append(self.short_url)
@@ -114,6 +137,7 @@ class AppModelTestCase(unittest.TestCase):
         self.assertEqual(self.short_url2.long_url_id, self.long_url.id)
 
     def test_shorturl_user_relationship(self):
+        """Test the many to one relationship between ShortUrl and User."""
         self.user.short_urls.append(self.short_url)
         self.user2.short_urls.append(self.short_url)
         self.user.short_urls.append(self.short_url2)
@@ -127,6 +151,7 @@ class AppModelTestCase(unittest.TestCase):
         self.assertEqual(self.short_url2.user_id, self.user.id)
 
     def test_longurl_user_relationship(self):
+        """Test the many to many relationship between User and LongUrl."""
         self.long_url.users.append(self.user)
         self.long_url.users.append(self.user2)
         self.user.long_urls.append(self.long_url2)

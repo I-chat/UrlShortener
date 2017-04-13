@@ -1,3 +1,4 @@
+"""Customize http errors to return specific messages."""
 from . import api
 from .auth import auth
 from flask import request, render_template, jsonify
@@ -5,6 +6,7 @@ from flask import request, render_template, jsonify
 
 @api.app_errorhandler(404)
 def page_not_found(e):
+    """Customize the defualt http 404 status_code message."""
     if request.accept_mimetypes.accept_json:
         response = jsonify({'error': 'Resource not found'})
         response.status_code = 404
@@ -14,6 +16,7 @@ def page_not_found(e):
 
 @api.app_errorhandler(400)
 def bad_request(e):
+    """Customize the defualt http 400 status_code message."""
     response = jsonify({
         'error': '400 Bad Request',
         'message': "The request is invalid or inconsistent. {e}"
@@ -23,7 +26,8 @@ def bad_request(e):
 
 
 @api.errorhandler(403)
-def bad_request(e):
+def forbidden(e):
+    """Customize the defualt http 403 status_code message."""
     response = jsonify({
         'error': '403 Forbidden',
         'message': "Permission required! "
@@ -35,6 +39,7 @@ def bad_request(e):
 
 @auth.error_handler
 def unauthorized():
+    """Customize the defualt http 401 status_code message."""
     response = jsonify({
         'error': '401 Unauthenticated',
         'message': 'The authentication credentials sent with the request are '
