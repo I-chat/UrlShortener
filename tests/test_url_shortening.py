@@ -1,13 +1,17 @@
+"""Testing all things shortening of long urls."""
+import json
 import unittest
-from flask import current_app, url_for
 from app import create_app, db
 from app.models import User
 from base64 import b64encode
-import json
+from flask import url_for
 
 
 class ApiShorten(unittest.TestCase):
+    """Test shortening of urls."""
+
     def setUp(self):
+        """Setup app for testing before each test case."""
         self.app = create_app('testing')
         self.app_context = self.app.app_context()
         self.app_context.push()
@@ -25,11 +29,13 @@ class ApiShorten(unittest.TestCase):
             })
 
     def tearDown(self):
+        """Delete app and db instances after each test case."""
         db.session.remove()
         db.drop_all()
         self.app_context.pop()
 
     def api_email_auth_headers(self, email, password):
+        """Setup an authorization header with an email and password."""
         return {
             'Authorization': 'Basic ' + b64encode(
                 (email + ':' + password).encode('utf-8')).decode('utf-8'),
@@ -38,6 +44,7 @@ class ApiShorten(unittest.TestCase):
         }
 
     def api_token_auth_headers(self, token):
+        """Setup an authorization header with a token."""
         return {
             'Authorization': 'Basic ' + b64encode(
                 (token + ':' + '').encode('utf-8')).decode('utf-8'),
@@ -46,6 +53,7 @@ class ApiShorten(unittest.TestCase):
         }
 
     def test_anonymous_user_shorten_via_api(self):
+        """Test that anonymous users cannot shorten urls via the API."""
         response = self.client.post(url_for('api.shorten_url'),
                                     data=self.post_data)
         json_response = json.loads(response.data.decode('utf-8'))
@@ -55,6 +63,7 @@ class ApiShorten(unittest.TestCase):
         self.assertEqual(403, response.status_code)
 
     def test_registered_user_shorten_via_api(self):
+        """Test that registered users can shorten urls via the API."""
         self.user.save()
         email_header = self.api_email_auth_headers('ichiato@yahoo.com',
                                                    'password')
@@ -81,6 +90,7 @@ class ApiShorten(unittest.TestCase):
         self.assertEqual(201, shorten_response_with_token_auth.status_code)
 
     def test_registered_user_with_no_body(self):
+        """Test that anonymous users cannot shorten urls via the API."""
         self.user.save()
         email_header = self.api_email_auth_headers('ichiato@yahoo.com',
                                                    'password')
@@ -99,6 +109,7 @@ class ApiShorten(unittest.TestCase):
         self.assertEqual(400, shorten_response_with_token_auth.status_code)
 
     def test_registered_user_with_bad_body(self):
+        """Shorten of urls with bad data should return a BadRequest error."""
         self.user.save()
         email_header = self.api_email_auth_headers('ichiato@yahoo.com',
                                                    'password')
@@ -118,6 +129,7 @@ class ApiShorten(unittest.TestCase):
         self.assertEqual(400, shorten_response_with_token_auth.status_code)
 
     def test_registered_user_with_vanity_string(self):
+        """Test that registered users can shorten urls with vanity_string."""
         self.user.save()
         email_header = self.api_email_auth_headers('ichiato@yahoo.com',
                                                    'password')
@@ -137,6 +149,7 @@ class ApiShorten(unittest.TestCase):
         self.assertEqual(201, shorten_response_with_token_auth.status_code)
 
     def test_user_shortening_same_url_twice(self):
+        """Test that shortening the same url twice will return same url."""
         self.user.save()
         email_header = self.api_email_auth_headers('ichiato@yahoo.com',
                                                    'password')
@@ -162,6 +175,7 @@ class ApiShorten(unittest.TestCase):
         self.assertEqual(201, shorten_response_with_token_auth2.status_code)
 
     def test_user_shortening_with_existing_vanity_string(self):
+        """Test that vanity_string must always be unique in the database."""
         self.user.save()
         post_data4 = json.dumps({
             "url": "http://www.google.com",

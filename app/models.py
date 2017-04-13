@@ -1,5 +1,5 @@
+"""SQLalchemy database models."""
 from app import db
-from datetime import datetime
 from flask import current_app
 from flask_login import UserMixin
 from itsdangerous import (TimedJSONWebSignatureSerializer
@@ -23,6 +23,8 @@ log_table = db.Table('visits', db.Column('short_url_id', db.Integer,
 
 
 class User(UserMixin, db.Model):
+    """Map the User class to the users table in the database."""
+
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(20), nullable=False)
@@ -35,26 +37,32 @@ class User(UserMixin, db.Model):
 
     @property
     def password(self):
+        """Raise error when reading a User password attribute."""
         raise AttributeError('password is not a readable attribute')
 
     @password.setter
     def password(self, password):
+        """Convert passwords to hashed values."""
         self.password_hash = generate_password_hash(password)
 
     def verify_password(self, password):
+        """Verify passwords with the hashed equivalent."""
         return check_password_hash(self.password_hash, password)
 
     def save(self):
+        """Save a user to database."""
         db.session.add(self)
         db.session.commit()
 
     def generate_auth_token(self, expiration):
+        """Generate a random token with an expiration time."""
         s = Serializer(current_app.config['SECRET_KEY'],
                        expires_in=expiration)
         return s.dumps({'id': self.id})
 
     @staticmethod
     def verify_auth_token(token):
+        """Verify token."""
         s = Serializer(current_app.config['SECRET_KEY'])
         try:
             data = s.loads(token)
@@ -66,10 +74,13 @@ class User(UserMixin, db.Model):
         return user
 
     def __repr__(self):
+        """Represent objects with a readable format."""
         return "<User(email='%s')>" % self.email
 
 
 class ShortUrl(db.Model):
+    """Map ShortUrl class to short_url table in the database."""
+
     __tablename__ = 'short_url'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -88,10 +99,13 @@ class ShortUrl(db.Model):
                            back_populates='short_urls')
 
     def __repr__(self):
+        """Represent objects with a readable format."""
         return "<ShortUrl(short_url='%s')>" % self.short_url
 
 
 class LongUrl(db.Model):
+    """Map the LongUrl class to the long_url table in the database."""
+
     __tablename__ = 'long_url'
     id = db.Column(db.Integer, primary_key=True)
     long_url = db.Column(db.String, unique=True)
@@ -101,10 +115,13 @@ class LongUrl(db.Model):
     short_urls = db.relationship("ShortUrl", back_populates="long_url")
 
     def __repr__(self):
+        """Represent objects with a readable format."""
         return "<LongUrl(long_url='%s')>" % self.long_url
 
 
 class UrlActivityLogs(db.Model):
+    """Map the class to the activity_logs table in the database."""
+
     __tablename__ = 'activity_logs'
     id = db.Column(db.Integer, primary_key=True)
     ip = db.Column(db.String(15), nullable=False)

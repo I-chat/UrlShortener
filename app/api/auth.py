@@ -1,4 +1,4 @@
-from app import db
+"""Manage user authentication and registration endpoints."""
 from . import api
 from flask import request, abort, jsonify, g
 from flask_login import AnonymousUserMixin
@@ -11,6 +11,7 @@ auth = HTTPBasicAuth()
 
 @auth.verify_password
 def verify_password(email_or_token, password):
+    """Manage the authentication of either email and password or token."""
     if not email_or_token:
         g.current_user = AnonymousUserMixin()
         return True
@@ -29,6 +30,7 @@ def verify_password(email_or_token, password):
 @api.route('/token')
 @auth.login_required
 def get_token():
+    """Return a valid token for registered users."""
     if g.current_user.is_anonymous or g.token_used:
         return abort(403)
     return jsonify({'token': g.current_user.generate_auth_token(
@@ -37,6 +39,7 @@ def get_token():
 
 @api.route('/register', methods=['POST'])
 def new_user():
+    """Register a user and save the details."""
     try:
         register(request.json)
     except MultipleInvalid:
