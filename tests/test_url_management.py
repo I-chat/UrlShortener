@@ -1,6 +1,6 @@
 import unittest
 from app import create_app, db
-from app.models import User
+from app.models import User, ShortUrl, LongUrl
 from base64 import b64encode
 from flask import current_app, url_for
 import json
@@ -36,18 +36,10 @@ class ApiShorten(unittest.TestCase):
         return token_header
 
     def shorten_4_url(self):
-        post_data = json.dumps({
-            "url": "http://www.andela.com",
-            })
-        post_data2 = json.dumps({
-            "url": "http://www.google.com",
-            })
-        post_data3 = json.dumps({
-            "url": "http://www.wikipedia.com",
-            })
-        post_data4 = json.dumps({
-            "url": "http://www.devops.com",
-            })
+        post_data = json.dumps({"url": "http://www.andela.com"})
+        post_data2 = json.dumps({"url": "http://www.google.com"})
+        post_data3 = json.dumps({"url": "http://www.wikipedia.com"})
+        post_data4 = json.dumps({"url": "http://www.devops.com"})
         token_header = self.get_auth_token()
         shorten_response_with_token_auth = self.client.post(
                             url_for('api.shorten_url'), headers=token_header,
@@ -259,3 +251,77 @@ class ApiShorten(unittest.TestCase):
                         url_list[2]['Date_added'])
         self.assertTrue(url_list[2]['Date_added'] >
                         url_list[3]['Date_added'])
+
+    def test_update_target_url(self):
+        post_data = json.dumps({"url": "http://www.easterbunny.com"})
+        self.shorten_4_url()
+        token_header = self.get_auth_token()
+        former_url = ShortUrl.query.get(1).long_url
+        response = self.client.put(url_for('api.change_long_url', id=1),
+                                   headers=token_header, data=post_data)
+        new_url = ShortUrl.query.get(1).long_url
+        self.assertNotEqual(former_url, new_url)
+        self.assertIn('http://www.andela.com', former_url.__repr__())
+        self.assertIn('http://www.easterbunny.com', new_url.__repr__())
+
+    def test_update_another_user_short_url_targeturl(self):
+        user2 = User(first_name='sefia', last_name='ikikin',
+                     email='sefiaomo@yahoo.com', password='password')
+        user2.save()
+        self.shorten_4_url()
+        email_header = self.api_email_auth_headers('sefiaomo@yahoo.com',
+                                                   'password')
+        token_header = self.get_auth_token(email_header)
+        post_data = json.dumps({"url": "http://www.easterbunny.com"})
+        former_url = ShortUrl.query.get(1).long_url
+        response = self.client.put(url_for('api.change_long_url', id=1),
+                                   headers=token_header, data=post_data)
+        new_url = ShortUrl.query.get(1).long_url
+        self.assertEqual(former_url, new_url)
+        self.assertIn('http://www.andela.com', former_url.__repr__())
+        self.assertNotIn('http://www.easterbunny.com', new_url.__repr__())
+        self.assertIn('http://www.andela.com', new_url.__repr__())
+
+    def test_update_target_url_with_bad_body(self):
+        post_data = json.dumps({"u": "http://www.easterbunny.com"})
+        self.shorten_4_url()
+        token_header = self.get_auth_token()
+        former_url = ShortUrl.query.get(1).long_url
+        response = self.client.put(url_for('api.change_long_url', id=1),
+                                   headers=token_header, data=post_data)
+        new_url = ShortUrl.query.get(1).long_url
+        self.assertEqual(400, response.status_code)
+
+    def test_update_target_url_with_no_body(self):
+        self.shorten_4_url()
+        token_header = self.get_auth_token()
+        former_url = ShortUrl.query.get(1).long_url
+        response = self.client.put(url_for('api.change_long_url', id=1),
+                                   headers=token_header)
+        new_url = ShortUrl.query.get(1).long_url
+        self.assertEqual(400, response.status_code)
+
+    def test_no_duplication_of_long_url(self):
+        user2 = User(first_name='sefia', last_name='ikikin',
+                     email='sefiaomo@yahoo.com', password='password')
+        user2.save()
+        self.shorten_4_url()
+        email_header = self.api_email_auth_headers('sefiaomo@yahoo.com',
+                                                   'password')
+        token_header = self.get_auth_token(email_header)
+        post_data = json.dumps({"url": "http://www.andela.com"})
+        post_data2 = json.dumps({"url": "http://www.google.com"})
+        shorten_response_with_token_auth = self.client.post(
+                            url_for('api.shorten_url'), headers=token_header,
+                            data=post_data)
+        shorten_response_with_token_auth2 = self.client.post(
+                            url_for('api.shorten_url'), headers=token_header,
+                            data=post_data2)
+        query_long_url = LongUrl.query.filter_by(
+            long_url="http://www.andela.com")
+        query_long_url2 = LongUrl.query.filter_by(
+            long_url="http://www.google.com")
+        with self.assertRaises(IndexError):
+            query_long_url[1]
+        with self.assertRaises(IndexError):
+            query_long_url2[1]
