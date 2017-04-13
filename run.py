@@ -1,18 +1,15 @@
 #!flask/bin/python
 import os
-import coverage
-import unittest
-
-from flask_script import Manager, Shell
-from flask_migrate import Migrate, MigrateCommand
-
-from app import create_app, db
 
 COV = None
 if os.environ.get('FLASK_COVERAGE'):
+    import coverage
     COV = coverage.coverage(branch=True, include='app/*')
     COV.start()
 
+from app import create_app, db
+from flask_script import Manager, Shell
+from flask_migrate import Migrate, MigrateCommand
 
 app = create_app(os.getenv('FLASK_CONFIG') or 'default')
 manager = Manager(app)
@@ -30,6 +27,7 @@ def test(coverage=False):
         import sys
         os.environ['FLASK_COVERAGE'] = '1'
         os.execvp(sys.executable, [sys.executable] + sys.argv)
+    import unittest
     tests = unittest.TestLoader().discover('tests')
     unittest.TextTestRunner(verbosity=2).run(tests)
     if COV:
