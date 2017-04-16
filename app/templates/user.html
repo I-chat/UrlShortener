@@ -1,0 +1,91 @@
+{% extends "bootstrap/base.html" %}
+{% block title %}UrlShortener{% endblock %}
+{% block head %}
+{{ super() }}
+<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+<link href="https://fonts.googleapis.com/css?family=Happy+Monkey" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='font-awesome-4.7.0/css/font-awesome.min.css') }}">
+{% endblock %}
+{% block navbar %}
+<nav class="navbar">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/">UrlShortener</a>
+    </div>
+    <!-- Trigger the registration and sign in modals with a button -->
+    <button type="button" class="btn navbar-btn" data-toggle="modal" data-target="#modal-login">Sign in</button>
+    <button type="button" class="btn register navbar-btn" data-toggle="modal" data-target="#modal-register">Sign up</button>
+
+    <!-- Modal Register -->
+    <div class="modal fade" id="modal-register" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-dialog width" role="document">
+        <!--Content-->
+        <div class="modal-content">
+            <!--Header-->
+            <div class="modal-header flex-column">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h3 class="w-100"><i class="fa fa-user"></i> Register with:</h3>
+                    <div class="flex-row">
+                        <a href="" class="btn-floating btn-gplus btn-small"><i class="fa fa-google-plus"></i></a>
+                        <a href="https://www.facebook.com/login" class="btn-floating btn-fb btn-small"><i class="fa fa-facebook"></i></a>
+                        <a href="" class="btn-floating btn-tw btn-small"><i class="fa fa-twitter"></i></a>
+                    </div>
+            </div>
+            <!--Body-->
+            <div class="modal-body">
+              <div class="input-group input-group-lg">
+                <span class="input-group-addon" id="basic-addon1"><i class="fa fa-user"></i></span>
+                <input type="text" id="form2" placeholder="Your firstname" class="form-control font" aria-describedby="basic-addon1">
+              </div>
+
+              <div class="input-group input-group-lg">
+                <span class="input-group-addon" id="basic-addon1"><i class="fa fa-user"></i></span>
+                <input type="text" id="form2" placeholder="Your lastname" class="form-control font" aria-describedby="basic-addon1">
+              </div>
+
+              <div class="input-group input-group-lg">
+                <span class="input-group-addon" id="basic-addon1"><i class="fa fa-envelope prefix"></i></span>
+                <input type="text" id="form2" placeholder="Your email" class="form-control font" aria-describedby="basic-addon1">
+              </div>
+
+              <div class="input-group input-group-lg">
+                <span class="input-group-addon" id="basic-addon2"><i class="fa fa-lock prefix"></i></span>
+                <input type="password" id="form3" placeholder="Your password" class="form-control font" aria-describedby="basic-addon2">
+              </div>
+
+              <div class="input-group input-group-lg">
+                <span class="input-group-addon" id="basic-addon3"><i class="fa fa-lock prefix"></i></span>
+                <input type="password" id="form4" placeholder="Your password" class="form-control font" aria-describedby="basic-addon3">
+              </div>
+
+              <div class="input-group input-group-lg">
+                  <button class="btn btn-primary btn-lg color">Sign up</button>
+              </div>
+            </div>
+            <!--Footer-->
+            <div class="modal-footer">
+                <div class="options">
+                    <p>Already have an account? <a href="#">Log in</a></p>
+                </div>
+                <button type="button" class="btn btn-default ml-auto color" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+        <!--/.Content-->
+    </div>
+</div>
+  </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <h1>Hello, {{ name }}!</h1>
+  </div>
+</div>
+{% endblock %}
+<div class="plainmodal-overlay"></div>
