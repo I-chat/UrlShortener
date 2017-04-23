@@ -47,7 +47,7 @@ def password_string(value):
 
 def check_vanity_str(value):
     """Check that all vanity strings are strings and non empty."""
-    if type(value) is str and len(value) > 0:
+    if type(value) is str and len(value) > 0 and " " not in value:
         return value
     abort(400, "Invalid input. Vanity string can only be a non empty string.")
 
