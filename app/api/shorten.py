@@ -178,8 +178,8 @@ def toogle_is_active(id):
         short_url.is_active = True
         output = "Activation Successful."
     else:
-        output = "You are trying to either activate a URL that is already"\
-                 " activated or deactivate a URL that is already deactivated."
+        abort(400, "You are trying to either activate a URL that is already"
+              " activated or deactivate a URL that is already deactivated.")
 
     db.session.commit()
     return jsonify({'message': output}), 200
