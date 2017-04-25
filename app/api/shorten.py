@@ -173,7 +173,8 @@ def toogle_is_active(id):
     if short_url.is_active and request.url.endswith('deactivate'):
         short_url.is_active = False
         output = "Deactivation Successful."
-    elif not short_url.is_active and request.url.endswith('activate'):
+    elif not short_url.is_active and request.url.endswith('activate') and not\
+            request.url.endswith('deactivate'):
         short_url.is_active = True
         output = "Activation Successful."
     else:
