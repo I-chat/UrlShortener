@@ -2,7 +2,7 @@
 import unittest
 import json
 from app import create_app, db
-from app.models import User, ShortUrl, LongUrl
+from app.models import LongUrl, ShortUrl, UrlActivityLogs, User
 from base64 import b64encode
 from flask import url_for
 from time import sleep
@@ -269,7 +269,11 @@ class ApiShorten(unittest.TestCase):
                         url_list[3]['Date_added'])
 
     def test_update_target_url(self):
-        """Test the updating of a short_url target url."""
+        """Test the updating of a short_url target url.
+
+        This target URL never existed in the database and thus needs to be
+        newly persisted to the databse.
+        """
         post_data = json.dumps({"url": "http://www.easterbunny.com"})
         self.shorten_4_url()
         token_header = self.get_auth_token()
@@ -280,6 +284,23 @@ class ApiShorten(unittest.TestCase):
         self.assertNotEqual(former_url, new_url)
         self.assertIn('http://www.andela.com', former_url.__repr__())
         self.assertIn('http://www.easterbunny.com', new_url.__repr__())
+
+    def test_update_target_url2(self):
+        """Test the updating of a short_url target url.
+
+        This target URL already exist in the database and thus need not to be
+        saved to the database again.
+        """
+        post_data = json.dumps({"url": "http://www.devops.com"})
+        self.shorten_4_url()
+        token_header = self.get_auth_token()
+        former_url = ShortUrl.query.get(1).long_url
+        self.client.put(url_for('api.change_long_url', id=1),
+                        headers=token_header, data=post_data)
+        new_url = ShortUrl.query.get(1).long_url
+        self.assertNotEqual(former_url, new_url)
+        self.assertIn('http://www.andela.com', former_url.__repr__())
+        self.assertIn('http://www.devops.com', new_url.__repr__())
 
     def test_update_another_user_short_url_targeturl(self):
         """Test updating another users short_url target url."""
@@ -352,3 +373,30 @@ class ApiShorten(unittest.TestCase):
             query_long_url[1]
         with self.assertRaises(IndexError):
             query_long_url2[1]
+
+    def test_short_url_activity_logs(self):
+        """Test that short_url visited records logs of its visitors."""
+        responses = self.shorten_4_url()
+        post_data_response = json.loads(responses[0]
+                                        .data.decode('utf-8'))
+        short_url = post_data_response['short_url']
+        self.client.get(url_for('api.get_url', shorturl=short_url[22:]),
+                        environ_base={'HTTP_USER_AGENT': 'chrome, windows',
+                        'REMOTE_ADDR': '221.192.199.49'})
+        log = UrlActivityLogs.query.get(1)
+        self.assertEqual(log.ip, '221.192.199.49')
+        self.assertEqual(log.platform, 'windows')
+        self.assertEqual(log.browser, 'chrome')
+
+    def test_get_user_shorturl(self):
+        """Test getting user short_url list."""
+        self.shorten_4_url()
+        token_header = self.get_auth_token()
+        response = self.client.get(url_for('api.get_user_short_urls'),
+                                   headers=token_header)
+        json_response = json.loads(response.data.decode('utf-8'))
+        msg = json_response['short_url list'][0]
+        self.assertTrue(msg['Date_added'])
+        self.assertEqual(msg['Times_visted'], 0)
+        self.assertTrue(msg['Active status'])
+        self.assertTrue(msg['short_url'])
