@@ -124,14 +124,14 @@ class ApiShorten(unittest.TestCase):
         """Test that users can deactivate and activate their short_urls."""
         self.shorten_4_url()
         token_header = self.get_auth_token()
-        response = self.client.put(url_for('api.toogle_is_active',
-                                           id=1), headers=token_header)
+        url = '/api/v1/short_url/1/deactivate'
+        response = self.client.put(url, headers=token_header)
         json_response = json.loads(response.data.decode('utf-8'))
         msg = json_response['message']
         self.assertEqual(msg, 'Deactivation Successful.')
         self.assertEqual(200, response.status_code)
-        response2 = self.client.put(url_for('api.toogle_is_active',
-                                            id=1), headers=token_header)
+        url2 = '/api/v1/short_url/1/activate'
+        response2 = self.client.put(url2, headers=token_header)
         json_response2 = json.loads(response2.data.decode('utf-8'))
         msg2 = json_response2['message']
         self.assertEqual(msg2, 'Activation Successful.')
@@ -146,8 +146,8 @@ class ApiShorten(unittest.TestCase):
         email_header = self.api_email_auth_headers('sefiaomo@yahoo.com',
                                                    'password')
         token_header = self.get_auth_token(email_header)
-        response = self.client.put(url_for('api.toogle_is_active',
-                                           id=1), headers=token_header)
+        url = '/api/v1/short_url/1/deactivate'
+        response = self.client.put(url, headers=token_header)
         json_response = json.loads(response.data.decode('utf-8'))
         msg = json_response['error']
         self.assertTrue(response.status_code == 404)
@@ -186,10 +186,9 @@ class ApiShorten(unittest.TestCase):
         """"Test that inactive short_urls don't redirect."""
         responses = self.shorten_4_url()
         token_header = self.get_auth_token()
-        response = self.client.put(url_for('api.toogle_is_active',
-                                           id=1), headers=token_header)
-        post_data_response = json.loads(responses[0]
-                                        .data.decode('utf-8'))
+        url = '/api/v1/short_url/1/deactivate'
+        response = self.client.put(url, headers=token_header)
+        post_data_response = json.loads(responses[0].data.decode('utf-8'))
         short_url = post_data_response['short_url']
         response = self.client.get(url_for('api.get_url',
                                    shorturl=short_url[22:]),
