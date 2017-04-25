@@ -7,7 +7,7 @@ from flask_migrate import Migrate, MigrateCommand
 COV = None
 if os.environ.get('FLASK_COVERAGE'):
     import coverage
-    COV = coverage.coverage(branch=True, include='app/*')
+    COV = coverage.coverage(branch=True, include='app/*', omit='app/main/*')
     COV.start()
 
 from app import create_app, db
@@ -39,7 +39,6 @@ def test(coverage=False):
         covdir = os.path.join(basedir, 'tmp/coverage')
         COV.html_report(directory=covdir)
         print('HTML version: file://%s/index.html' % covdir)
-        COV.erase()
 
 
 manager.add_command("shell", Shell(make_context=make_shell_context))

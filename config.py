@@ -12,23 +12,19 @@ class Config:
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     SITE_URL = dotenv.get('SITE_URL')
 
-    @staticmethod
-    def init_app(app):
-        pass
-
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = dotenv.get('DEV_DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = dotenv.get('DEV_DATABASE_URL').format(basedir)
 
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = dotenv.get('TEST_DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = dotenv.get('TEST_DATABASE_URL').format(basedir)
 
 
 class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL').format(basedir)
 
 
 config = {

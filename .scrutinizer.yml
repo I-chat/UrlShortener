@@ -4,5 +4,5 @@ checks:
         duplicate_code: true
 filter:
     excluded_paths:
-        - '*/test/*'
+        - 'tests/*'
 build: true
