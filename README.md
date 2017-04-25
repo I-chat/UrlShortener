@@ -85,7 +85,7 @@ PicoUrl exposes its data via an Application Programming Interface (API), so deve
 
 ### API Resource Endpoints
 
-URL Prefix = `http://sample_domain/api/v1` where sample domain is the root URL of the server HOST.
+URL Prefix = `https://ich-at.herokuapp.com/api/v1` is the root URL of the server HOST.
 
 
 | EndPoint                                 | Functionality                 | Public Access|
