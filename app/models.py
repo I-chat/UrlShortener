@@ -16,13 +16,6 @@ relationship_table = db.Table('relationship',
                                         nullable=False))
 
 
-log_table = db.Table('visits', db.Column('short_url_id', db.Integer,
-                                         db.ForeignKey('short_url.id'),
-                                         nullable=False),
-                     db.Column('log_id', db.Integer, db.ForeignKey(
-                                    'activity_logs.id'), nullable=False))
-
-
 class User(UserMixin, db.Model):
     """Map the User class to the users table in the database."""
 
@@ -101,8 +94,7 @@ class ShortUrl(db.Model):
     long_url_id = db.Column(db.Integer, db.ForeignKey('long_url.id'),
                             nullable=False)
     long_url = db.relationship("LongUrl", back_populates="short_urls")
-    logs = db.relationship('UrlActivityLogs', secondary=log_table,
-                           back_populates='short_urls')
+    logs = db.relationship("UrlActivityLogs", back_populates="short_url")
 
     def change_long_url(self, long_url):
         """Change the target url of a short_url and commit to database."""
@@ -144,7 +136,7 @@ class ShortUrl(db.Model):
                 'short_url': x.short_url} for x in short_urls]
 
     @staticmethod
-    def findurl(short_url):
+    def findurl(short_url, request):
         """Query the database for a given short_url.
 
         It also counts the number of times it finds the short_url that is
@@ -153,6 +145,17 @@ class ShortUrl(db.Model):
         short_url = ShortUrl.query.filter_by(short_url=short_url).first()
         if short_url and not short_url.deleted and short_url.is_active:
             short_url.no_of_visits += 1
+            short_url.long_url.no_of_visits += 1
+            ip = request.remote_addr
+            if request.user_agent:
+                browser = request.user_agent.browser
+                platform = request.user_agent.platform
+            else:
+                platform = None
+                browser = request.headers['User-Agent']
+            log = UrlActivityLogs(ip=ip, browser=browser, platform=platform,
+                                  short_url_id=short_url.id)
+            db.session.add(log)
             db.session.commit()
         return short_url
 
@@ -207,10 +210,13 @@ class UrlActivityLogs(db.Model):
     __tablename__ = 'activity_logs'
     id = db.Column(db.Integer, primary_key=True)
     ip = db.Column(db.String(15), nullable=False)
+    platform = db.Column(db.String())
+    browser = db.Column(db.String)
     country_name = db.Column(db.String(64))
     region_name = db.Column(db.String(64))
     city = db.Column(db.String(64))
     latitude = db.Column(db.Float(6))
     longitude = db.Column(db.Float(6))
-    short_urls = db.relationship('ShortUrl', secondary=log_table,
-                                 back_populates='logs')
+    short_url_id = db.Column(db.Integer, db.ForeignKey('short_url.id'),
+                             nullable=False)
+    short_url = db.relationship("ShortUrl", back_populates="logs")
