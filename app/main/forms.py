@@ -6,9 +6,8 @@ from wtforms.widgets.core import html_params
 
 
 class InlineButtonWidget(object):
-    """
-    Render a basic ``<button>`` field.
-    """
+    """Render a basic ``<button>`` field."""
+
     input_type = 'submit'
     html_params = staticmethod(html_params)
 
@@ -16,7 +15,8 @@ class InlineButtonWidget(object):
         kwargs.setdefault('id', "shorten")
         kwargs.setdefault('type', self.input_type)
         kwargs.setdefault('value', field.label.text)
-        return HTMLString('<button %s>SHORTEN!' % self.html_params(name=field.name, **kwargs))
+        return HTMLString('<button %s>SHORTEN!' % self.html_params(
+                            name=field.name, **kwargs))
 
 
 class InlineSubmitField(BooleanField):
@@ -26,7 +26,8 @@ class InlineSubmitField(BooleanField):
     """
     widget = InlineButtonWidget()
 
+
 class ShortForm(FlaskForm):
-    short_url = StringField(validators=[Required(), URL()])
+    url = StringField(validators=[Required(), URL()])
     vanity_string = StringField()
     submit = InlineSubmitField()
