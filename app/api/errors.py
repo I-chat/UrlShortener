@@ -8,7 +8,8 @@ from flask import request, render_template, jsonify
 def page_not_found(e):
     """Customize the defualt http 404 status_code message."""
     if request.accept_mimetypes.accept_json:
-        response = jsonify({'error': 'Resource not found'})
+        response = jsonify({'error': 'Resource not found. {e}'
+                            .format(e=e.description)})
         response.status_code = 404
         return response
     return render_template('404.html'), 404
