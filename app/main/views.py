@@ -1,5 +1,5 @@
 import dotenv
-from flask import flash, redirect, render_template, request
+from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required, current_user
 from . import main
 from ..auth.forms import RegistrationForm, LoginForm
@@ -13,11 +13,11 @@ site_url = dotenv.get('SITE_URL')
 
 
 @main.route('/')
-@main.route('/index')
 @main.route('/shorten', methods=['POST'])
+@main.route('/index')
 def index():
     if current_user.is_authenticated:
-        return redirect()
+        return redirect(url_for('main.user_dashboard'))
     register_form = RegistrationForm()
     login_form = LoginForm()
     short_form = ShortForm()
@@ -30,14 +30,30 @@ def index():
                         email='AnonymousUser')
             user.save()
         short_url = UrlSaver.generate_and_save_urls(
-                            short_form.short_url.data, user).short_url
+                            short_form.url.data, user).short_url
+
+        try:
+            if request.headers['Ajax-Test']:
+                return site_url + short_url
+        except KeyError:
+            return render_template('index.html', register_form=register_form,
+                                   login_form=login_form,
+                                   short_form=short_form,
+                                   short_url=site_url + short_url)
+
     if short_form.errors:
         flash([value for value in short_form.errors.values()][0][0],
               'shorten')
     try:
-        if request.headers['Ajax-Test']:
-            return site_url + short_url
+        request.headers['Ajax-Test']
     except KeyError:
         return render_template('index.html', register_form=register_form,
                                login_form=login_form, short_form=short_form,
                                short_url=site_url + short_url)
+
+
+@main.route('/dashboard')
+@login_required
+def user_dashboard():
+    return render_template('dashboard.html', register_form="",
+                           login_form="", short_form="",)
