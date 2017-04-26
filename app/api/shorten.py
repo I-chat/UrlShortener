@@ -26,7 +26,7 @@ def check_authentication_with_token():
         abort(403)
 
 
-@api.route('/shorten', methods=['POST'])
+@api.route('/shorten', methods=['POST'], strict_slashes=False)
 @auth.login_required
 def shorten_url():
     """An endpoint which shortens a long url.
@@ -58,7 +58,7 @@ def shorten_url():
                     'short_url': site_url + short_url.short_url}), 201
 
 
-@api.route('/<shorturl>')
+@api.route('/<shorturl>', strict_slashes=False)
 def get_url(shorturl):
     """Redirect short_urls to their long_url version.
 
@@ -77,7 +77,8 @@ def get_url(shorturl):
         abort(404)
 
 
-@api.route('short_url/<int:id>/change_longurl/', methods=['PUT'])
+@api.route('/short_url/<int:id>/change_longurl', methods=['PUT'],
+           strict_slashes=False)
 @auth.login_required
 def change_long_url(id):
     """Update target url of a given short_url."""
@@ -101,7 +102,7 @@ def change_long_url(id):
     return jsonify({'message': "Tagert url change was successful."}), 200
 
 
-@api.route('/user/short_urls')
+@api.route('/user/short_urls', strict_slashes=False)
 @auth.login_required
 def get_user_short_urls():
     """Return a list of a users service shortened URLs."""
@@ -118,7 +119,7 @@ def get_user_short_urls():
                         for x in short_url]}), 200
 
 
-@api.route('/shorturl/<int:id>/logs')
+@api.route('/shorturl/<int:id>/logs', strict_slashes=False)
 @auth.login_required
 def get_short_url_visit_log(id):
     """Get log details of visits to a particular short_url."""
@@ -138,7 +139,7 @@ def get_short_url_visit_log(id):
                         ' to record any details.'}), 200
 
 
-@api.route('/shorturl/<int:id>')
+@api.route('/shorturl/<int:id>', strict_slashes=False)
 @auth.login_required
 def get_short_url(id):
     """Get the details of a short_url."""
@@ -157,8 +158,10 @@ def get_short_url(id):
                     'Active status': short_url.is_active}), 200
 
 
-@api.route('/short_url/<int:id>/deactivate', methods=['PUT'])
-@api.route('/short_url/<int:id>/activate', methods=['PUT'])
+@api.route('/short_url/<int:id>/deactivate', methods=['PUT'],
+           strict_slashes=False)
+@api.route('/short_url/<int:id>/activate', methods=['PUT'],
+           strict_slashes=False)
 @auth.login_required
 def toogle_is_active(id):
     """Deactivate or activate a users short_url."""
@@ -185,7 +188,7 @@ def toogle_is_active(id):
     return jsonify({'message': output}), 200
 
 
-@api.route('/users/influential')
+@api.route('/users/influential', strict_slashes=False)
 @auth.login_required
 def get_influential_users():
     """Get a list of influential users and the number of URLs shortened."""
@@ -198,7 +201,7 @@ def get_influential_users():
                                      x.short_urls))} for x in sorted_users]})
 
 
-@api.route('/user/')
+@api.route('/user/', strict_slashes=False)
 @auth.login_required
 def get_user_details():
     """Get a details of the current user."""
@@ -211,7 +214,7 @@ def get_user_details():
                                 g.current_user.short_urls))})
 
 
-@api.route('/<string:url_type>/<string:sort_type>')
+@api.route('/<string:url_type>/<string:sort_type>', strict_slashes=False)
 @auth.login_required
 def sort_urls(url_type, sort_type):
     """Return short_urls based popularity and recently added."""
@@ -230,7 +233,8 @@ def sort_urls(url_type, sort_type):
         abort(400, "Invalid endpoint.")
 
 
-@api.route('short_url/<int:id>/delete', methods=['DELETE'])
+@api.route('/short_url/<int:id>/delete', methods=['DELETE'],
+           strict_slashes=False)
 @auth.login_required
 def delete_urls(id):
     """Set short_url delete column to True."""

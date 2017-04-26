@@ -27,7 +27,7 @@ def verify_password(email_or_token, password):
     return user.verify_password(password)
 
 
-@api.route('/token')
+@api.route('/token', strict_slashes=False)
 @auth.login_required
 def get_token():
     """Return a valid token for registered users."""
@@ -37,7 +37,7 @@ def get_token():
         expiration=3600).decode('ascii'), 'expiration': 3600}), 201
 
 
-@api.route('/register', methods=['POST'])
+@api.route('/register', methods=['POST'], strict_slashes=False)
 def new_user():
     """Register a user and save the details."""
     try:
