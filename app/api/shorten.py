@@ -21,7 +21,7 @@ site_url = dotenv.get('SITE_URL')
 
 
 def check_authentication_with_token():
-    """Check that a is authenticated and used token for authentication."""
+    """Check that a user is authenticated and used token for authentication."""
     if g.current_user.is_anonymous or not g.token_used:
         abort(403)
 
@@ -68,7 +68,7 @@ def get_url(shorturl):
     """
     short_url = ShortUrl.findurl(shorturl, request)
     if short_url and short_url.deleted:
-        abort(404, "URL deleted.")
+        abort(404, "This URL has been deleted.")
     elif short_url and not short_url.is_active:
         abort(400, "URL is inactive.")
     elif short_url and short_url.is_active:
@@ -95,11 +95,15 @@ def change_long_url(id):
         short_url = [short_url for short_url in g.current_user.short_urls
                      if short_url.id == id and not short_url.deleted][0]
     except IndexError:
-        abort(404)
+        abort(404, "You do not have any such URL.")
 
     long_url = request.json.get('url')
-    short_url.change_long_url(long_url)
-    return jsonify({'message': "Tagert url change was successful."}), 200
+    result = short_url.change_long_url(long_url, g.current_user)
+    if result:
+        return jsonify({'message': "You have previously shortened this URL"
+                        " to %s." % result.short_url})
+    return jsonify({'message': "Target url successfully changed to %s."
+                    % long_url}), 200
 
 
 @api.route('/user/short_urls', strict_slashes=False)
@@ -111,7 +115,7 @@ def get_user_short_urls():
     try:
         short_url = [short_url for short_url in g.current_user.short_urls]
     except IndexError:
-        abort(404)
+        abort(404, "You are yet to shorten any URL.")
     return jsonify({'short_url list':
                     [{'Date_added': x.when, 'Times_visted': x.no_of_visits,
                       'Active status': x.is_active,
@@ -129,7 +133,7 @@ def get_short_url_visit_log(id):
         logs = [short_url for short_url in g.current_user.short_urls
                 if short_url.id == id][0].logs
     except IndexError:
-        abort(404)
+        abort(404, "You do not have any such URL.")
     if logs:
         return jsonify({'short_url logs':
                         [{'I.P Adress': x.ip, 'User agent': x.browser,
@@ -149,7 +153,7 @@ def get_short_url(id):
         short_url = [short_url for short_url in g.current_user.short_urls
                      if short_url.id == id][0]
     except IndexError:
-        abort(404)
+        abort(404, "You do not have any such URL.")
 
     return jsonify({'short_url': site_url + short_url.short_url,
                     'Times_visted': short_url.no_of_visits,
@@ -171,7 +175,7 @@ def toogle_is_active(id):
         short_url = [short_url for short_url in g.current_user.short_urls
                      if short_url.id == id][0]
     except IndexError:
-        abort(404)
+        abort(404, "You do not have any such URL.")
 
     if short_url.is_active and request.url.endswith('deactivate'):
         short_url.is_active = False
@@ -193,7 +197,7 @@ def toogle_is_active(id):
 def get_influential_users():
     """Get a list of influential users and the number of URLs shortened."""
     check_authentication_with_token()
-    users = User.query
+    users = User.query.all()
     sorted_users = sorted(users, key=lambda user: len(user.short_urls),
                           reverse=True)
     return jsonify({'users_list': [{'Name': x.first_name + " " + x.last_name,
@@ -201,7 +205,7 @@ def get_influential_users():
                                      x.short_urls))} for x in sorted_users]})
 
 
-@api.route('/user/', strict_slashes=False)
+@api.route('/user', strict_slashes=False)
 @auth.login_required
 def get_user_details():
     """Get a details of the current user."""
@@ -244,9 +248,10 @@ def delete_urls(id):
         short_url = [short_url for short_url in g.current_user.short_urls
                      if short_url.id == id][0]
     except IndexError:
-        abort(404)
+        abort(404, "You do not have any such URL.")
     if short_url.deleted:
-        abort(404)
+        abort(404, "This URL has been deleted.")
     short_url.deleted = True
     db.session.commit()
-    return jsonify({'message': 'Deleted'})
+    return jsonify({'message': '%s has been Deleted' %
+                    site_url + short_url.short_url})

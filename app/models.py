@@ -96,16 +96,21 @@ class ShortUrl(db.Model):
     long_url = db.relationship("LongUrl", back_populates="short_urls")
     logs = db.relationship("UrlActivityLogs", back_populates="short_url")
 
-    def change_long_url(self, long_url):
+    def change_long_url(self, long_url, user):
         """Change the target url of a short_url and commit to database."""
-        if not LongUrl.query.filter_by(long_url=long_url).first():
-            long_url = LongUrl(long_url=long_url)
-            db.session.add(long_url)
-            db.session.commit()
-            self.long_url = long_url
+        prev_long_url = self.long_url
+        new_long_url = LongUrl.query.filter_by(long_url=long_url).first()
+        if not new_long_url:
+            new_long_url = LongUrl(long_url=long_url)
+            update_dict = {"long_url": long_url, "no_of_visits": 0}
+            prev_long_url.query.update(update_dict)
+        elif new_long_url in user.long_urls:
+            result = [short_url for short_url in user.short_urls if
+                      short_url.long_url_id == new_long_url.id][0]
+            return result
         else:
-            long_url_id = LongUrl.query.filter_by(long_url=long_url).first().id
-            self.long_url_id = long_url_id
+            update_dict = {"long_url": long_url, "no_of_visits": 0}
+            prev_long_url.query.update(update_dict)
         self.when = db.func.current_timestamp()
         self.no_of_visits = 0
         db.session.commit()

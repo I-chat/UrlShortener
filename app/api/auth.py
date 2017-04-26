@@ -34,7 +34,7 @@ def get_token():
     if g.current_user.is_anonymous or g.token_used:
         return abort(403)
     return jsonify({'token': g.current_user.generate_auth_token(
-        expiration=3600).decode('ascii'), 'expiration': 3600}), 201
+        expiration=3600).decode('ascii'), 'expiration': '3600secs'}), 201
 
 
 @api.route('/register', methods=['POST'], strict_slashes=False)
