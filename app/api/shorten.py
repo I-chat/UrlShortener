@@ -104,7 +104,7 @@ def change_long_url(id):
                         % long_url}), 200
     short_url = site_url + result.short_url
     return jsonify({'message': "You have previously shortened this URL"
-                    " to %s." % short_url})
+                    " to %s." % short_url}), 400
 
 
 @api.route('/user/short_urls', strict_slashes=False)
@@ -113,9 +113,8 @@ def get_user_short_urls():
     """Return a list of a users service shortened URLs."""
     check_authentication_with_token()
 
-    try:
-        short_url = [short_url for short_url in g.current_user.short_urls]
-    except IndexError:
+    short_url = [short_url for short_url in g.current_user.short_urls]
+    if not short_url:
         abort(404, "You are yet to shorten any URL.")
     return jsonify({'short_url list':
                     [{'Date_added': x.when, 'Times_visted': x.no_of_visits,
@@ -137,11 +136,11 @@ def get_short_url_visit_log(id):
         abort(404, "You do not have any such URL.")
     if logs:
         return jsonify({'short_url logs':
-                        [{'I.P Adress': x.ip, 'User agent': x.browser,
-                          'System platform': x.platform} for x in logs]})
+                        [{'I.P Address': x.ip, 'User agent': x.browser,
+                          'System platform': x.platform} for x in logs]}), 200
     else:
         return jsonify({'message': 'This URL has never been visited or unable'
-                        ' to record any details.'}), 200
+                        ' to record any details.'}), 404
 
 
 @api.route('/shorturl/<int:id>', strict_slashes=False)
@@ -216,7 +215,7 @@ def get_user_details():
                     'lastname': g.current_user.last_name,
                     'email': g.current_user.email,
                     'no of URL shortened': len(list(
-                                g.current_user.short_urls))})
+                                g.current_user.short_urls))}), 200
 
 
 @api.route('/<string:url_type>/<string:sort_type>', strict_slashes=False)
