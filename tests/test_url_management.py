@@ -103,7 +103,7 @@ class ApiShorten(unittest.TestCase):
                                       headers=token_header)
         json_response = json.loads(response.data.decode('utf-8'))
         msg = json_response['message']
-        self.assertEqual(msg, 'Deleted')
+        self.assertEqual(msg, 'Deletion successful.')
 
     def test_shorturl_delete_twice(self):
         """Test that a short_url cannot be deleted twice."""
@@ -117,8 +117,9 @@ class ApiShorten(unittest.TestCase):
         json_response2 = json.loads(response2.data.decode('utf-8'))
         msg = json_response['message']
         msg2 = json_response2['error']
-        self.assertEqual(msg, 'Deleted')
-        self.assertEqual(msg2, 'Resource not found')
+        self.assertEqual(msg, 'Deletion successful.')
+        self.assertEqual(msg2, 'Resource not found.'
+                         ' This URL has been deleted.')
 
     def test_toogle_is_active(self):
         """Test that users can deactivate and activate their short_urls."""
@@ -151,7 +152,8 @@ class ApiShorten(unittest.TestCase):
         json_response = json.loads(response.data.decode('utf-8'))
         msg = json_response['error']
         self.assertTrue(response.status_code == 404)
-        self.assertEqual(msg, 'Resource not found')
+        self.assertEqual(msg, 'Resource not found.'
+                         ' You do not have any such URL.')
 
     def test_delete_other_users_shorturl(self):
         """Test that users can only delete their short_urls."""
@@ -167,7 +169,8 @@ class ApiShorten(unittest.TestCase):
         json_response = json.loads(response.data.decode('utf-8'))
         msg = json_response['error']
         self.assertTrue(response.status_code == 404)
-        self.assertEqual(msg, 'Resource not found')
+        self.assertEqual(msg, 'Resource not found.'
+                         ' You do not have any such URL.')
 
     def test_shorturl_redirection(self):
         """Test the redirection of active short_urls."""
@@ -250,6 +253,45 @@ class ApiShorten(unittest.TestCase):
         self.assertTrue(url_list[2]['Times_visted'] >
                         url_list[3]['Times_visted'])
 
+    def test_get_longurl_by_popularity(self):
+        """Test the sorting of long_urls based on popularity."""
+        token_header = self.get_auth_token()
+        responses = self.shorten_4_url()
+        post_data_response = json.loads(responses[0]
+                                        .data.decode('utf-8'))
+        short_url = post_data_response['short_url']
+        post_data_response2 = json.loads(responses[1]
+                                         .data.decode('utf-8'))
+        short_url2 = post_data_response2['short_url']
+        post_data_response3 = json.loads(responses[2]
+                                         .data.decode('utf-8'))
+        short_url3 = post_data_response3['short_url']
+        self.client.get(url_for('api.get_url', shorturl=short_url[22:]),
+                        headers=token_header)
+        self.client.get(url_for('api.get_url', shorturl=short_url[22:]),
+                        headers=token_header)
+        self.client.get(url_for('api.get_url', shorturl=short_url[22:]),
+                        headers=token_header)
+        self.client.get(url_for('api.get_url', shorturl=short_url2[22:]),
+                        headers=token_header)
+        self.client.get(url_for('api.get_url', shorturl=short_url2[22:]),
+                        headers=token_header)
+        self.client.get(url_for('api.get_url', shorturl=short_url3[22:]),
+                        headers=token_header)
+        response = self.client.get(url_for('api.sort_urls',
+                                   url_type='longurl',
+                                   sort_type='popularity'),
+                                   headers=token_header)
+        json_response = json.loads(response.data.decode('utf-8'))
+        url_list = json_response['url_list']
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(url_list[0]['Times_visted'] >
+                        url_list[1]['Times_visted'])
+        self.assertTrue(url_list[1]['Times_visted'] >
+                        url_list[2]['Times_visted'])
+        self.assertTrue(url_list[2]['Times_visted'] >
+                        url_list[3]['Times_visted'])
+
     def test_get_shorturl_by_date(self):
         """Sort all short_url by most recently created."""
         token_header = self.get_auth_token()
@@ -285,13 +327,39 @@ class ApiShorten(unittest.TestCase):
         self.assertIn('http://www.andela.com', former_url.__repr__())
         self.assertIn('http://www.easterbunny.com', new_url.__repr__())
 
+    def test_user_dont_duplicate_long_url_when_target_change(self):
+        """Test no duplication of long URL in the database.
+
+        This is to make sure that duplicate long URLs are not created when
+        changing short URL target.
+        """
+        user2 = User(first_name='sefia', last_name='ikikin',
+                     email='sefiaomo@yahoo.com', password='password')
+        user2.save()
+        self.shorten_4_url()
+        email_header = self.api_email_auth_headers('sefiaomo@yahoo.com',
+                                                   'password')
+        token_header = self.get_auth_token(email_header)
+        post_data = json.dumps({"url": "https://ich-at.app.com"})
+        self.client.post(url_for('api.shorten_url'), headers=token_header,
+                         data=post_data)
+        post_data2 = json.dumps({"url": "http://www.andela.com"})
+        self.client.put(url_for('api.change_long_url', id=5),
+                        headers=token_header, data=post_data2)
+        long_url = LongUrl.query.filter_by(long_url='http://www.andela.com'
+                                           ).all()
+        long_url2 = LongUrl.query.filter_by(long_url='https://ich-at.app.com'
+                                            ).all()
+        self.assertLess(len(long_url), 2)
+        self.assertLess(len(long_url2), 2)
+
     def test_update_target_url2(self):
         """Test the updating of a short_url target url.
 
         This target URL already exist in the database and thus need not to be
         saved to the database again.
         """
-        post_data = json.dumps({"url": "http://www.devops.com"})
+        post_data = json.dumps({"url": "http://www.sqlalchemy.com"})
         self.shorten_4_url()
         token_header = self.get_auth_token()
         former_url = ShortUrl.query.get(1).long_url
@@ -300,7 +368,26 @@ class ApiShorten(unittest.TestCase):
         new_url = ShortUrl.query.get(1).long_url
         self.assertNotEqual(former_url, new_url)
         self.assertIn('http://www.andela.com', former_url.__repr__())
-        self.assertIn('http://www.devops.com', new_url.__repr__())
+        self.assertIn('http://www.sqlalchemy.com', new_url.__repr__())
+
+    def test_update_target_url3(self):
+        """Test the updating of a short_url target url.
+
+        The user has previously shortened this target URL and can't change
+        another short_url to point to this one. I instead remind the user that
+        he already has another short_url pointing to the new target URL.
+        """
+        post_data = json.dumps({"url": "http://www.devops.com"})
+        responses = self.shorten_4_url()
+        short_url = json.loads(responses[-1].data.decode('utf-8'))['short_url']
+        token_header = self.get_auth_token()
+        response = self.client.put(url_for('api.change_long_url', id=1),
+                                   headers=token_header, data=post_data)
+        json_response = json.loads(response.data.decode('utf-8'))
+        msg = json_response['message']
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(msg, "You have previously shortened this URL"
+                         " to %s." % short_url)
 
     def test_update_another_user_short_url_targeturl(self):
         """Test updating another users short_url target url."""
@@ -388,6 +475,23 @@ class ApiShorten(unittest.TestCase):
         self.assertEqual(log.platform, 'windows')
         self.assertEqual(log.browser, 'chrome')
 
+    def test_getting_short_url_activity_logs_details(self):
+        """Test getting details of visits to a short_url."""
+        responses = self.shorten_4_url()
+        token_header = self.get_auth_token()
+        post_data_response = json.loads(responses[0]
+                                        .data.decode('utf-8'))
+        short_url = post_data_response['short_url']
+        self.client.get(url_for('api.get_url', shorturl=short_url[22:]),
+                        environ_base={'HTTP_USER_AGENT': 'chrome, windows',
+                        'REMOTE_ADDR': '221.192.199.49'})
+        response = self.client.get(url_for('api.get_short_url_visit_log',
+                                   id=1), headers=token_header)
+        json_response = json.loads(response.data.decode('utf-8'))
+        self.assertTrue(json_response['short_url logs'][0]['I.P Address'])
+        self.assertTrue(json_response['short_url logs'][0]['User agent'])
+        self.assertTrue(json_response['short_url logs'][0]['System platform'])
+
     def test_get_user_shorturl(self):
         """Test getting user short_url list."""
         self.shorten_4_url()
@@ -400,3 +504,14 @@ class ApiShorten(unittest.TestCase):
         self.assertEqual(msg['Times_visted'], 0)
         self.assertTrue(msg['Active status'])
         self.assertTrue(msg['short_url'])
+
+    def test_get_user_shorturl2(self):
+        """A user with no short_url should return a 404 error."""
+        token_header = self.get_auth_token()
+        response = self.client.get(url_for('api.get_user_short_urls'),
+                                   headers=token_header)
+        json_response = json.loads(response.data.decode('utf-8'))
+        msg = json_response['error']
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(msg, "Resource not found."
+                         " You are yet to shorten any URL.")
