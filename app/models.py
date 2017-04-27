@@ -98,19 +98,24 @@ class ShortUrl(db.Model):
 
     def change_long_url(self, long_url, user):
         """Change the target url of a short_url and commit to database."""
-        prev_long_url = self.long_url
         new_long_url = LongUrl.query.filter_by(long_url=long_url).first()
-        if not new_long_url:
-            new_long_url = LongUrl(long_url=long_url)
-            update_dict = {"long_url": long_url, "no_of_visits": 0}
-            prev_long_url.query.update(update_dict)
-        elif new_long_url in user.long_urls:
+        old_long_url = self.long_url
+        if new_long_url in user.long_urls:
             result = [short_url for short_url in user.short_urls if
                       short_url.long_url_id == new_long_url.id][0]
             return result
+        elif new_long_url:
+            self.long_url = new_long_url
+            new_long_url.users.append(user)
         else:
-            update_dict = {"long_url": long_url, "no_of_visits": 0}
-            prev_long_url.query.update(update_dict)
+            new_long_url = LongUrl(long_url=long_url)
+            db.session.add(new_long_url)
+            db.session.commit()
+            old_long_url.users.remove(user)
+            self.long_url = new_long_url
+            new_long_url.users.append(user)
+        if not old_long_url.users:
+            db.session.delete(old_long_url)
         self.when = db.func.current_timestamp()
         self.no_of_visits = 0
         db.session.commit()

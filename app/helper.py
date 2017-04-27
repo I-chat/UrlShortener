@@ -18,7 +18,6 @@ class UrlSaver(object):
         """Help manage the generating and saving of urls."""
         if url in [x.long_url for x in user.long_urls]:
             long_url = LongUrl.query.filter_by(long_url=url).first()
-            # import pdb; pdb.set_trace()
             return [short_url for short_url in
                     user.short_urls if short_url.long_url_id == long_url.id][0]
 

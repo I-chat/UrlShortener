@@ -7,7 +7,7 @@ from flask_migrate import Migrate, MigrateCommand
 COV = None
 if os.environ.get('FLASK_COVERAGE'):
     import coverage
-    COV = coverage.coverage(branch=True, include='app/*', omit='app/main/*')
+    COV = coverage.coverage(branch=True, include='app/*', omit=['app/main/*', 'app/auth/*'])
     COV.start()
 
 from app import create_app, db

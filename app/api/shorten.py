@@ -99,11 +99,12 @@ def change_long_url(id):
 
     long_url = request.json.get('url')
     result = short_url.change_long_url(long_url, g.current_user)
-    if result:
-        return jsonify({'message': "You have previously shortened this URL"
-                        " to %s." % result.short_url})
-    return jsonify({'message': "Target url successfully changed to %s."
-                    % long_url}), 200
+    if result is True:
+        return jsonify({'message': "Target url successfully changed to %s."
+                        % long_url}), 200
+    short_url = site_url + result.short_url
+    return jsonify({'message': "You have previously shortened this URL"
+                    " to %s." % short_url})
 
 
 @api.route('/user/short_urls', strict_slashes=False)
@@ -253,5 +254,4 @@ def delete_urls(id):
         abort(404, "This URL has been deleted.")
     short_url.deleted = True
     db.session.commit()
-    return jsonify({'message': '%s has been Deleted' %
-                    site_url + short_url.short_url})
+    return jsonify({'message': 'Deletion successful.'})
