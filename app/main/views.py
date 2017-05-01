@@ -1,11 +1,12 @@
 import dotenv
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required, current_user
-from . import main
-from ..auth.forms import RegistrationForm, LoginForm
-from ..helper import UrlSaver
-from ..models import User
-from .forms import ShortForm
+
+from app.auth.forms import RegistrationForm, LoginForm
+from app.helper import UrlSaver
+from app.main import main
+from app.models import AnonymousUser, User
+from app.main.forms import ShortForm
 
 
 dotenv.load()
@@ -26,9 +27,8 @@ def index():
     if short_form.validate_on_submit():
         user = User.query.filter_by(email='AnonymousUser').first()
         if not user:
-            user = User(first_name='AnonymousUser', last_name='AnonymousUser',
-                        email='AnonymousUser')
-            user.save()
+            user = AnonymousUser.create_anonymous_user()
+
         short_url = UrlSaver.generate_and_save_urls(
                             short_form.url.data, user).short_url
 

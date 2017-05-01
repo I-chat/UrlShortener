@@ -1,11 +1,13 @@
 """Testing all things authentication through the API."""
+from base64 import b64encode
+import json
 import unittest
+
+from flask import url_for
+
 from app import create_app, db
 from app.api import auth
 from app.models import User
-from base64 import b64encode
-from flask import url_for
-import json
 
 
 class ApiAuthentication(unittest.TestCase):

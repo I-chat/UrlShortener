@@ -7,13 +7,14 @@ to url shortening.
 import dotenv
 from flask import request, abort, jsonify, g, redirect
 from werkzeug.exceptions import BadRequest
-from . import api
-from app import db
-from ..models import LongUrl, ShortUrl, User
-from .auth import auth
-from ..helper import UrlSaver
-from .validators import valid_url
 from voluptuous import MultipleInvalid
+
+from app import db
+from app.api import api
+from app.api.validators import valid_url
+from app.api.auth import auth
+from app.helper import UrlSaver
+from app.models import LongUrl, ShortUrl, User
 
 
 dotenv.load()
@@ -37,8 +38,8 @@ def shorten_url():
 
     try:
         valid_url(request.json)
-    except MultipleInvalid:
-        abort(400, "Incomplete or too many required keys provided.")
+    except MultipleInvalid as e:
+        abort(400, e.msg)
     except BadRequest:
         abort(400, "The request does not contain a body.")
 
@@ -99,12 +100,12 @@ def change_long_url(id):
 
     long_url = request.json.get('url')
     result = short_url.change_long_url(long_url, g.current_user)
-    if result is True:
-        return jsonify({'message': "Target url successfully changed to %s."
-                        % long_url}), 200
-    short_url = site_url + result.short_url
-    return jsonify({'message': "You have previously shortened this URL"
-                    " to %s." % short_url}), 400
+    if isinstance(result, ShortUrl):
+        short_url = site_url + result.short_url
+        return jsonify({'message': "You have previously shortened this URL"
+                        " to %s." % short_url}), 400
+    return jsonify({'message': "Target url successfully changed to %s."
+                    % long_url}), 200
 
 
 @api.route('/user/short_urls', strict_slashes=False)
@@ -117,8 +118,8 @@ def get_user_short_urls():
     if not short_url:
         abort(404, "You are yet to shorten any URL.")
     return jsonify({'short_url list':
-                    [{'Date_added': x.when, 'Times_visted': x.no_of_visits,
-                      'Active status': x.is_active,
+                    [{'date_added': x.when, 'times_visted': x.no_of_visits,
+                      'is_active': x.is_active,
                       'short_url': site_url + x.short_url}
                         for x in short_url]}), 200
 
@@ -156,10 +157,10 @@ def get_short_url(id):
         abort(404, "You do not have any such URL.")
 
     return jsonify({'short_url': site_url + short_url.short_url,
-                    'Times_visted': short_url.no_of_visits,
+                    'times_visted': short_url.no_of_visits,
                     'long_url': short_url.long_url.long_url,
-                    'Date added': short_url.when,
-                    'Active status': short_url.is_active}), 200
+                    'date added': short_url.when,
+                    'active status': short_url.is_active}), 200
 
 
 @api.route('/short_url/<int:id>/deactivate', methods=['PUT'],
@@ -167,7 +168,7 @@ def get_short_url(id):
 @api.route('/short_url/<int:id>/activate', methods=['PUT'],
            strict_slashes=False)
 @auth.login_required
-def toogle_is_active(id):
+def toggle_is_active(id):
     """Deactivate or activate a users short_url."""
     check_authentication_with_token()
 

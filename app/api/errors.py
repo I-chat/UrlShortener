@@ -1,7 +1,8 @@
 """Customize http errors to return specific messages."""
-from . import api
-from .auth import auth
 from flask import request, render_template, jsonify
+
+from app.api import api
+from app.api.auth import auth
 
 
 @api.app_errorhandler(404)

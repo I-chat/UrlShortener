@@ -1,11 +1,12 @@
 """SQLalchemy database models."""
-from . import login_manager
-from app import db
 from flask import current_app
-from flask_login import UserMixin
+from flask_login import AnonymousUserMixin, UserMixin
 from itsdangerous import (TimedJSONWebSignatureSerializer
                           as Serializer, BadSignature, SignatureExpired)
 from werkzeug.security import generate_password_hash, check_password_hash
+
+from . import login_manager
+from app import db
 
 relationship_table = db.Table('relationship',
                               db.Column('user_id', db.Integer,
@@ -77,6 +78,18 @@ class User(UserMixin, db.Model):
         return "<User(email='%s')>" % self.email
 
 
+class AnonymousUser(AnonymousUserMixin):
+    """Create an User with with AnonymousUserMixin properties."""
+
+    @staticmethod
+    def create_anonymous_user():
+        """Create anonymous user."""
+        anonymous_user = User(first_name='AnonymousUser',
+                              last_name='AnonymousUser', email='AnonymousUser')
+        anonymous_user.save()
+        return anonymous_user
+
+
 class ShortUrl(db.Model):
     """Map ShortUrl class to short_url table in the database."""
 
@@ -101,13 +114,10 @@ class ShortUrl(db.Model):
         new_long_url = LongUrl.query.filter_by(long_url=long_url).first()
         old_long_url = self.long_url
         if new_long_url in user.long_urls:
-            result = [short_url for short_url in user.short_urls if
-                      short_url.long_url_id == new_long_url.id][0]
-            return result
-        elif new_long_url:
-            self.long_url = new_long_url
-            new_long_url.users.append(user)
-        else:
+            short_url = [short_url for short_url in user.short_urls if
+                         short_url.long_url_id == new_long_url.id][0]
+            return short_url
+        elif not new_long_url:
             new_long_url = LongUrl(long_url=long_url)
             db.session.add(new_long_url)
             db.session.commit()
@@ -116,6 +126,8 @@ class ShortUrl(db.Model):
             new_long_url.users.append(user)
         if not old_long_url.users:
             db.session.delete(old_long_url)
+        self.long_url = new_long_url
+        new_long_url.users.append(user)
         self.when = db.func.current_timestamp()
         self.no_of_visits = 0
         db.session.commit()

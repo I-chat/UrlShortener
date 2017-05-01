@@ -34,26 +34,19 @@ class UrlSaver(object):
             return save_data
 
     @staticmethod
-    def save_url(short_url, long_url, user):
+    def save_url(short_url, url, user):
         """Save and append short and long urls to their various tables."""
-        long_url_exist = LongUrl.query.filter_by(long_url=long_url).first()
+        long_url = LongUrl.query.filter_by(long_url=url).first()
 
-        if long_url_exist:
-            shorturl = ShortUrl(short_url=short_url,
-                                long_url_id=long_url_exist.id)
-            user.short_urls.append(shorturl)
-            long_url_exist.users.append(user)
-            db.session.commit()
-            return shorturl
-        else:
-            long_url = LongUrl(long_url=long_url)
+        if not long_url:
+            long_url = LongUrl(long_url=url)
             db.session.add(long_url)
             db.session.commit()
-            shorturl = ShortUrl(short_url=short_url, long_url_id=long_url.id)
-            user.short_urls.append(shorturl)
-            long_url.users.append(user)
-            db.session.commit()
-            return shorturl
+        shorturl = ShortUrl(short_url=short_url, long_url_id=long_url.id)
+        user.short_urls.append(shorturl)
+        long_url.users.append(user)
+        db.session.commit()
+        return shorturl
 
     @staticmethod
     def generate_short_url(length=6):

@@ -125,7 +125,7 @@ class ApiShorten(unittest.TestCase):
             shorten_response_with_token_auth.data.decode('utf-8'))
         msg = json_shorten_response_with_token['message']
         self.assertEqual(msg, 'The request is invalid or inconsistent.'
-                         ' Incomplete or too many required keys provided.')
+                         ' required key not provided')
         self.assertEqual(400, shorten_response_with_token_auth.status_code)
 
     def test_registered_user_with_vanity_string(self):

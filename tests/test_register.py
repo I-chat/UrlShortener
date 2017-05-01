@@ -103,7 +103,7 @@ class ApiRegistration(unittest.TestCase):
         json_response = json.loads(response.data.decode("utf-8"))
         msg = json_response["message"]
         self.assertEqual(msg, "The request is invalid or inconsistent."
-                         " Incomplete number of required keys provided.")
+                         " required key not provided")
         self.assertEqual(response.status_code, 400)
 
     def test_register_with_bad_email(self):

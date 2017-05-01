@@ -1,10 +1,12 @@
 """Test all database models, mapping, methods and relationships."""
-import unittest
-from app import create_app, db
-from app.models import User, ShortUrl, LongUrl
 from datetime import datetime
-from flask_sqlalchemy import sqlalchemy
 from time import sleep
+import unittest
+
+from flask_sqlalchemy import sqlalchemy
+
+from app import create_app, db
+from app.models import LongUrl, ShortUrl, User
 
 
 class AppModelTestCase(unittest.TestCase):

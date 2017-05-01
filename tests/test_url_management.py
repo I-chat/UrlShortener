@@ -500,9 +500,9 @@ class ApiShorten(unittest.TestCase):
                                    headers=token_header)
         json_response = json.loads(response.data.decode('utf-8'))
         msg = json_response['short_url list'][0]
-        self.assertTrue(msg['Date_added'])
-        self.assertEqual(msg['Times_visted'], 0)
-        self.assertTrue(msg['Active status'])
+        self.assertTrue(msg['date_added'])
+        self.assertEqual(msg['times_visted'], 0)
+        self.assertTrue(msg['is_active'])
         self.assertTrue(msg['short_url'])
 
     def test_get_user_shorturl2(self):

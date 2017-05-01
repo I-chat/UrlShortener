@@ -1,10 +1,10 @@
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import (login_required, login_user, logout_user,
                          current_user)
-from . import auth
-from ..main.forms import ShortForm
-from ..models import User
-from .forms import RegistrationForm, LoginForm
+from app.auth import auth
+from app.main.forms import ShortForm
+from app.models import User
+from app.auth.forms import RegistrationForm, LoginForm
 
 
 @auth.route('/signup', methods=['GET', 'POST'])
