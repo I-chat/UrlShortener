@@ -22,6 +22,7 @@ class ApiAuthentication(unittest.TestCase):
         self.client = self.app.test_client(use_cookies=True)
         self.user = User(first_name='ichiato', last_name='ikikin',
                          email='ichiato@yahoo.com', password='password')
+        self.user.save()
 
     def tearDown(self):
         """Delete app and db instances after each test case."""
@@ -49,7 +50,6 @@ class ApiAuthentication(unittest.TestCase):
 
     def test_verify_password_with_token(self):
         """Test verify_password function with valid token."""
-        self.user.save()
         email_header = self.api_email_auth_headers('ichiato@yahoo.com',
                                                    'password')
         response = self.client.get(url_for('api.get_token'),
@@ -65,28 +65,26 @@ class ApiAuthentication(unittest.TestCase):
         response = self.client.get(url_for('api.get_token'), headers=header)
         json_response = json.loads(response.data.decode('utf-8'))
         msg = json_response['message']
+        self.assertEqual(response.status_code, 403)
         self.assertEqual(msg, 'Permission required! You are not allowed'
                          ' access to this resource.')
-        self.assertEqual(response.status_code, 403)
 
     def test_invalid_user(self):
         """Test the possibility of getting a token with invalid credentials."""
-        self.user.save()
         header = self.api_email_auth_headers('seni2@andela.com', '123456')
         response = self.client.get(url_for('api.get_token'), headers=header)
         json_response = json.loads(response.data.decode('utf-8'))
         msg = json_response['message']
+        self.assertEqual(response.status_code, 401)
         self.assertEqual(msg, 'The authentication credentials sent with the'
                          ' request are invalid or insufficient for the'
                          ' request.')
-        self.assertEqual(response.status_code, 401)
 
     def test_get_token(self):
         """Test the possibility of getting a token with valid credentials."""
-        self.user.save()
         header = self.api_email_auth_headers('ichiato@yahoo.com', 'password')
         response = self.client.get(url_for('api.get_token'), headers=header)
         json_response = json.loads(response.data.decode('utf-8'))
         token = json_response['token']
-        self.assertTrue(token)
         self.assertEqual(response.status_code, 201)
+        self.assertTrue(token)

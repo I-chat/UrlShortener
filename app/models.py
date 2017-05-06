@@ -79,7 +79,7 @@ class User(UserMixin, db.Model):
 
 
 class AnonymousUser(AnonymousUserMixin):
-    """Create an User with with AnonymousUserMixin properties."""
+    """Create an User with AnonymousUserMixin properties."""
 
     @staticmethod
     def create_anonymous_user():
@@ -96,12 +96,12 @@ class ShortUrl(db.Model):
     __tablename__ = 'short_url'
 
     id = db.Column(db.Integer, primary_key=True)
-    short_url = db.Column(db.String, unique=True)
+    url = db.Column(db.String, unique=True)
     is_active = db.Column(db.Boolean, default=True)
     no_of_visits = db.Column(db.Integer, default=0)
     deleted = db.Column(db.Boolean(), default=False, index=True)
-    when = db.Column(db.DateTime, default=db.func.current_timestamp(),
-                     nullable=False)
+    date_created = db.Column(db.DateTime, default=db.func.current_timestamp(),
+                             nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     user = db.relationship("User", back_populates="short_urls")
     long_url_id = db.Column(db.Integer, db.ForeignKey('long_url.id'),
@@ -111,14 +111,14 @@ class ShortUrl(db.Model):
 
     def change_long_url(self, long_url, user):
         """Change the target url of a short_url and commit to database."""
-        new_long_url = LongUrl.query.filter_by(long_url=long_url).first()
+        new_long_url = LongUrl.query.filter_by(url=long_url).first()
         old_long_url = self.long_url
         if new_long_url in user.long_urls:
             short_url = [short_url for short_url in user.short_urls if
                          short_url.long_url_id == new_long_url.id][0]
             return short_url
         elif not new_long_url:
-            new_long_url = LongUrl(long_url=long_url)
+            new_long_url = LongUrl(url=long_url)
             db.session.add(new_long_url)
             db.session.commit()
             old_long_url.users.remove(user)
@@ -128,7 +128,6 @@ class ShortUrl(db.Model):
             db.session.delete(old_long_url)
         self.long_url = new_long_url
         new_long_url.users.append(user)
-        self.when = db.func.current_timestamp()
         self.no_of_visits = 0
         db.session.commit()
         return True
@@ -140,10 +139,10 @@ class ShortUrl(db.Model):
         Sorts the list of short_urls queried from the ShortUrl
         table based on how recently they were added.
         """
-        short_urls = ShortUrl.query.order_by(db.desc(ShortUrl.when)).filter_by(
-                                             deleted=False).all()
-        return [{'Date_added': x.when, 'Times_visted': x.no_of_visits,
-                'short_url': x.short_url} for x in short_urls]
+        short_urls = ShortUrl.query.order_by(
+            db.desc(ShortUrl.date_created)).filter_by(deleted=False).all()
+        return [{'Date_added': x.date_created, 'Times_visted': x.no_of_visits,
+                'short_url': x.url} for x in short_urls]
 
     @staticmethod
     def sort_shorturl_by_popularity():
@@ -154,18 +153,19 @@ class ShortUrl(db.Model):
         """
         short_urls = ShortUrl.query.order_by(db.desc(
                         ShortUrl.no_of_visits)).filter_by(deleted=False).all()
-        return [{'Times_visted': x.no_of_visits, 'date_added': x.when,
-                'short_url': x.short_url} for x in short_urls]
+        return [{'Times_visted': x.no_of_visits, 'date_added': x.date_created,
+                'short_url': x.url} for x in short_urls]
 
     @staticmethod
-    def findurl(short_url, request):
+    def find_url(short_url, request):
         """Query the database for a given short_url.
 
         It also counts the number of times it finds the short_url that is
         active and not deleted.
         """
-        short_url = ShortUrl.query.filter_by(short_url=short_url).first()
-        if short_url and not short_url.deleted and short_url.is_active:
+        short_url = ShortUrl.query.filter_by(url=short_url,
+                                             deleted=False).first()
+        if short_url and short_url.is_active:
             short_url.no_of_visits += 1
             short_url.long_url.no_of_visits += 1
             ip = request.remote_addr
@@ -183,7 +183,7 @@ class ShortUrl(db.Model):
 
     def __repr__(self):
         """Represent objects with a readable format."""
-        return "<ShortUrl(short_url='%s')>" % self.short_url
+        return "<ShortUrl(short_url='%s')>" % self.url
 
 
 class LongUrl(db.Model):
@@ -191,7 +191,7 @@ class LongUrl(db.Model):
 
     __tablename__ = 'long_url'
     id = db.Column(db.Integer, primary_key=True)
-    long_url = db.Column(db.String, unique=True)
+    url = db.Column(db.String, unique=True)
     no_of_visits = db.Column(db.Integer, default=0)
     users = db.relationship("User", secondary=relationship_table,
                             back_populates="long_urls")
@@ -207,23 +207,23 @@ class LongUrl(db.Model):
         long_urls = LongUrl.query.order_by(
                                 db.desc(LongUrl.no_of_visits)).all()
         return [{'Times_visted': x.no_of_visits,
-                'long_url': x.long_url} for x in long_urls]
+                'long_url': x.url} for x in long_urls]
 
     @staticmethod
     def sort_long_url_by_date_added():
         """Sort the long_urls based on how recently they were added.
 
-        Sorts the list of long_urls queried from the LongtUrl
+        Sorts the list of long_urls queried from the LongUrl
         table based on how recently they were added.
         """
         long_urls = LongUrl.query.order_by(
-                                db.desc(LongUrl.when)).all()
-        return [{'Date_added': x.when, 'Times_visted': x.no_of_visits,
+                                db.desc(LongUrl.date_created)).all()
+        return [{'Date_added': x.date_created, 'Times_visted': x.no_of_visits,
                 'long_url': x.long_url} for x in long_urls]
 
     def __repr__(self):
         """Represent objects with a readable format."""
-        return "<LongUrl(long_url='%s')>" % self.long_url
+        return "<LongUrl(long_url='%s')>" % self.url
 
 
 class UrlActivityLogs(db.Model):

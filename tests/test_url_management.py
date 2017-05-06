@@ -346,10 +346,8 @@ class ApiShorten(unittest.TestCase):
         post_data2 = json.dumps({"url": "http://www.andela.com"})
         self.client.put(url_for('api.change_long_url', id=5),
                         headers=token_header, data=post_data2)
-        long_url = LongUrl.query.filter_by(long_url='http://www.andela.com'
-                                           ).all()
-        long_url2 = LongUrl.query.filter_by(long_url='https://ich-at.app.com'
-                                            ).all()
+        long_url = LongUrl.query.filter_by(url='http://www.andela.com').all()
+        long_url2 = LongUrl.query.filter_by(url='https://ich-at.app.com').all()
         self.assertLess(len(long_url), 2)
         self.assertLess(len(long_url2), 2)
 
@@ -452,10 +450,8 @@ class ApiShorten(unittest.TestCase):
                          data=post_data)
         self.client.post(url_for('api.shorten_url'), headers=token_header,
                          data=post_data2)
-        query_long_url = LongUrl.query.filter_by(
-            long_url="http://www.andela.com")
-        query_long_url2 = LongUrl.query.filter_by(
-            long_url="http://www.google.com")
+        query_long_url = LongUrl.query.filter_by(url="http://www.andela.com")
+        query_long_url2 = LongUrl.query.filter_by(url="http://www.google.com")
         with self.assertRaises(IndexError):
             query_long_url[1]
         with self.assertRaises(IndexError):

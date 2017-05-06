@@ -22,11 +22,10 @@ class AppModelTestCase(unittest.TestCase):
                          email='seni@andela.com')
         self.user2 = User(first_name='seni', last_name='abdulahi',
                           email='seni2@andel.com')
-        self.short_url = ShortUrl(short_url="nfdjf")
-        self.short_url2 = ShortUrl(short_url="hjf97")
-        self.long_url = LongUrl(long_url=""
-                                "https://docs.python.org/3/contents.html")
-        self.long_url2 = LongUrl(long_url="https://repl.it/languages/python3")
+        self.short_url = ShortUrl(url="nfdjf")
+        self.short_url2 = ShortUrl(url="hjf97")
+        self.long_url = LongUrl(url="https://docs.python.org/3/contents.html")
+        self.long_url2 = LongUrl(url="https://repl.it/languages/python3")
 
     def tearDown(self):
         """Delete app and db instances after each test case."""
@@ -61,8 +60,8 @@ class AppModelTestCase(unittest.TestCase):
         self.user2.password = '123456'
         self.assertTrue(self.user.password_hash != self.user2.password_hash)
 
-    def test_saving_null_to_users_table(self):
-        """Test that that Users table raises errors for empty columns."""
+    def test_saving_null_entries_to_users_table(self):
+        """Test that that Users table raises errors for empty cells."""
         user = User(first_name='seni', email='seni@andela.com')
         user.password = '123456'
         with self.assertRaises(sqlalchemy.exc.IntegrityError):
@@ -76,27 +75,55 @@ class AppModelTestCase(unittest.TestCase):
     def test_token_verification(self):
         """Test verification of token.
 
-        Valid tokens return True while invalid tokens return False.
+        Valid tokens return the appropriate user.
+        """
+        db.session.add(self.user, self.user2)
+        db.session.commit()
+        user_token = self.user.generate_auth_token(1)
+        self.assertEqual(self.user.verify_auth_token(user_token), self.user)
+        self.assertIsNone(self.
+                          user.verify_auth_token('jdjdje230920093944334j'))
+
+    def test_expired_token(self):
+        """Test verification of token.
+
+        Expired token should return None instead of the user.
+        """
+        db.session.add(self.user, self.user2)
+        db.session.commit()
+        user_token = self.user.generate_auth_token(1)
+        sleep(2)
+        self.assertIsNone(self.user.verify_auth_token(user_token))
+
+    def test_bad_token(self):
+        """Test verification of token.
+
+        Bad token should return None instead of the user.
+        """
+        db.session.add(self.user, self.user2)
+        db.session.commit()
+        self.assertIsNone(self.
+                          user.verify_auth_token('jdjdje230920093944334j'))
+
+    def test_token_only_for_1_user(self):
+        """Test verification of token.
+
+        Tokens should be valid only for one user.
         """
         db.session.add(self.user, self.user2)
         db.session.commit()
         user_token = self.user.generate_auth_token(1)
         self.assertNotEqual(self.user.verify_auth_token(user_token),
                             self.user2)
-        self.assertEqual(self.user.verify_auth_token(user_token), self.user)
-        sleep(2)
-        self.assertIsNone(self.user.verify_auth_token(user_token))
-        self.assertIsNone(self.
-                          user.verify_auth_token('jdjdje230920093944334j'))
 
     def test_shorturl_time_saving(self):
-        """Test that values saved to the when columns are datetime objects."""
+        """Test that values saved to the date_created columns are datetime objects."""
         self.long_url.short_urls.append(self.short_url)
         self.user.short_urls.append(self.short_url)
         self.long_url.users.append(self.user)
         db.session.add(self.short_url)
         db.session.commit()
-        self.assertIs(type(self.short_url.when), datetime)
+        self.assertIsInstance(self.short_url.date_created, datetime)
 
     def test_saving_user_to_db(self):
         """Test that the save method of the user model saves to database."""
@@ -111,7 +138,7 @@ class AppModelTestCase(unittest.TestCase):
         with self.assertRaises(sqlalchemy.exc.IntegrityError):
             db.session.commit()
 
-    def test_shorturl_is_active_defualts(self):
+    def test_shorturl_is_active_defaults(self):
         """Test that ShortUrl is_active column is set to True by default."""
         self.long_url.short_urls.append(self.short_url)
         self.user.short_urls.append(self.short_url)
@@ -119,8 +146,6 @@ class AppModelTestCase(unittest.TestCase):
         db.session.add(self.short_url)
         db.session.commit()
         self.assertTrue(self.short_url.is_active)
-        self.short_url.is_active = False
-        self.assertFalse(self.short_url.is_active)
 
     def test_shorturl_longurl_relationship(self):
         """Test the many to one relationship between ShortUrl and LongUrl."""

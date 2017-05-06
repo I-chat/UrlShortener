@@ -4,8 +4,7 @@ The module is for all endpoints that manages all services related
 to url shortening.
 """
 
-import dotenv
-from flask import request, abort, jsonify, g, redirect
+from flask import abort, current_app, g, jsonify, redirect, request
 from werkzeug.exceptions import BadRequest
 from voluptuous import MultipleInvalid
 
@@ -15,10 +14,6 @@ from app.api.validators import valid_url
 from app.api.auth import auth
 from app.helper import UrlSaver
 from app.models import LongUrl, ShortUrl, User
-
-
-dotenv.load()
-site_url = dotenv.get('SITE_URL')
 
 
 def check_authentication_with_token():
@@ -44,19 +39,20 @@ def shorten_url():
         abort(400, "The request does not contain a body.")
 
     long_url = request.json.get('url')
+    site_url = current_app.config['SITE_URL']
 
     if request.json.get('vanity_string') and not g.current_user.is_anonymous:
         vanity_string = request.json.get('vanity_string')
         short_url = UrlSaver.generate_and_save_urls(long_url, g.current_user,
                                                     vanity_string)
         return jsonify({'id': short_url.id,
-                        'short_url': site_url + short_url.short_url}), 201
+                        'short_url': site_url + short_url.url}), 201
 
     user = g.current_user
 
     short_url = UrlSaver.generate_and_save_urls(long_url, user)
     return jsonify({'id': short_url.id,
-                    'short_url': site_url + short_url.short_url}), 201
+                    'short_url': site_url + short_url.url}), 201
 
 
 @api.route('/<shorturl>', strict_slashes=False)
@@ -67,13 +63,13 @@ def get_url(shorturl):
     and if found redirects to the long url path. if not found sends a 404
     status_code.
     """
-    short_url = ShortUrl.findurl(shorturl, request)
+    short_url = ShortUrl.find_url(shorturl, request)
     if short_url and short_url.deleted:
         abort(404, "This URL has been deleted.")
     elif short_url and not short_url.is_active:
         abort(400, "URL is inactive.")
     elif short_url and short_url.is_active:
-        return redirect(short_url.long_url.long_url, code=302)
+        return redirect(short_url.long_url.url, code=302)
     else:
         abort(404)
 
@@ -99,9 +95,10 @@ def change_long_url(id):
         abort(404, "You do not have any such URL.")
 
     long_url = request.json.get('url')
+    site_url = current_app.config['SITE_URL']
     result = short_url.change_long_url(long_url, g.current_user)
     if isinstance(result, ShortUrl):
-        short_url = site_url + result.short_url
+        short_url = site_url + result.url
         return jsonify({'message': "You have previously shortened this URL"
                         " to %s." % short_url}), 400
     return jsonify({'message': "Target url successfully changed to %s."
@@ -115,12 +112,13 @@ def get_user_short_urls():
     check_authentication_with_token()
 
     short_url = [short_url for short_url in g.current_user.short_urls]
+    site_url = current_app.config['SITE_URL']
     if not short_url:
         abort(404, "You are yet to shorten any URL.")
     return jsonify({'short_url list':
-                    [{'date_added': x.when, 'times_visted': x.no_of_visits,
+                    [{'date_added': x.date_created, 'times_visted': x.no_of_visits,
                       'is_active': x.is_active,
-                      'short_url': site_url + x.short_url}
+                      'short_url': site_url + x.url}
                         for x in short_url]}), 200
 
 
@@ -155,11 +153,12 @@ def get_short_url(id):
                      if short_url.id == id][0]
     except IndexError:
         abort(404, "You do not have any such URL.")
+    site_url = current_app.config['SITE_URL']
 
-    return jsonify({'short_url': site_url + short_url.short_url,
+    return jsonify({'short_url': site_url + short_url.url,
                     'times_visted': short_url.no_of_visits,
-                    'long_url': short_url.long_url.long_url,
-                    'date added': short_url.when,
+                    'long_url': short_url.long_url.url,
+                    'date added': short_url.date_created,
                     'active status': short_url.is_active}), 200
 
 

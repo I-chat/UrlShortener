@@ -58,121 +58,97 @@ class ApiShorten(unittest.TestCase):
                                     data=self.post_data)
         json_response = json.loads(response.data.decode('utf-8'))
         msg = json_response['message']
+        self.assertEqual(403, response.status_code)
         self.assertEqual(msg, 'Permission required! You are not allowed'
                          ' access to this resource.')
-        self.assertEqual(403, response.status_code)
 
-    def test_registered_user_shorten_via_api(self):
-        """Test that registered users can shorten urls via the API."""
+    def test_registered_user_shorten_with_email(self):
+        """Test that registered users can shorten urls via the API.
+
+        Registered users cannot shorten a URL only with an email and password
+        combination.
+        """
         self.user.save()
         email_header = self.api_email_auth_headers('ichiato@yahoo.com',
                                                    'password')
-        token_response = self.client.get(url_for('api.get_token'),
-                                         headers=email_header)
-        json_token_response = json.loads(token_response.data.decode('utf-8'))
-        token = json_token_response['token']
-        token_header = self.api_token_auth_headers(token)
-        shorten_response_with_email_auth = self.client.post(
+        response = self.client.post(
             url_for('api.shorten_url'), headers=email_header,
             data=self.post_data)
-        shorten_response_with_token_auth = self.client.post(
-                            url_for('api.shorten_url'), headers=token_header,
-                            data=self.post_data)
-        json_shorten_response_with_email = json.loads(
-            shorten_response_with_email_auth.data.decode('utf-8'))
-        email_msg = json_shorten_response_with_email['message']
-        json_shorten_response_with_token = json.loads(
-            shorten_response_with_token_auth.data.decode('utf-8'))
-        self.assertEqual(email_msg, 'Permission required! You are not allowed'
+        json_response = json.loads(response.data.decode('utf-8'))
+        msg = json_response['message']
+        self.assertEqual(403, response.status_code)
+        self.assertEqual(msg, 'Permission required! You are not allowed'
                          ' access to this resource.')
-        self.assertIn('short_url', json_shorten_response_with_token)
-        self.assertEqual(403, shorten_response_with_email_auth.status_code)
-        self.assertEqual(201, shorten_response_with_token_auth.status_code)
+
+    def test_registered_user_shorten_with_token(self):
+        """Test that registered users can shorten urls via the API.
+
+        Registered users can shorten a URL only with a token.
+        """
+        self.user.save()
+        token = self.user.generate_auth_token(60).decode('ascii')
+        token_header = self.api_token_auth_headers(token)
+        response = self.client.post(url_for('api.shorten_url'),
+                                    headers=token_header, data=self.post_data)
+        json_response = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(201, response.status_code)
+        self.assertIn('short_url', json_response)
 
     def test_registered_user_with_no_body(self):
         """Test that anonymous users cannot shorten urls via the API."""
         self.user.save()
-        email_header = self.api_email_auth_headers('ichiato@yahoo.com',
-                                                   'password')
-        token_response = self.client.get(url_for('api.get_token'),
-                                         headers=email_header)
-        json_token_response = json.loads(token_response.data.decode('utf-8'))
-        token = json_token_response['token']
+        token = self.user.generate_auth_token(60).decode('ascii')
         token_header = self.api_token_auth_headers(token)
-        shorten_response_with_token_auth = self.client.post(
-                            url_for('api.shorten_url'), headers=token_header)
-        json_shorten_response_with_token = json.loads(
-            shorten_response_with_token_auth.data.decode('utf-8'))
-        msg = json_shorten_response_with_token['message']
+        response = self.client.post(url_for('api.shorten_url'),
+                                    headers=token_header)
+        json_response = json.loads(response.data.decode('utf-8'))
+        msg = json_response['message']
+        self.assertEqual(400, response.status_code)
         self.assertEqual(msg, 'The request is invalid or inconsistent.'
                          ' The request does not contain a body.')
-        self.assertEqual(400, shorten_response_with_token_auth.status_code)
 
     def test_registered_user_with_bad_body(self):
         """Shorten of urls with bad data should return a BadRequest error."""
         self.user.save()
-        email_header = self.api_email_auth_headers('ichiato@yahoo.com',
-                                                   'password')
-        token_response = self.client.get(url_for('api.get_token'),
-                                         headers=email_header)
-        json_token_response = json.loads(token_response.data.decode('utf-8'))
-        token = json_token_response['token']
+        token = self.user.generate_auth_token(60).decode('ascii')
         token_header = self.api_token_auth_headers(token)
-        shorten_response_with_token_auth = self.client.post(
-                            url_for('api.shorten_url'), headers=token_header,
-                            data=self.post_data2)
-        json_shorten_response_with_token = json.loads(
-            shorten_response_with_token_auth.data.decode('utf-8'))
-        msg = json_shorten_response_with_token['message']
+        response = self.client.post(url_for('api.shorten_url'),
+                                    headers=token_header, data=self.post_data2)
+        json_response = json.loads(response.data.decode('utf-8'))
+        msg = json_response['message']
+        self.assertEqual(400, response.status_code)
         self.assertEqual(msg, 'The request is invalid or inconsistent.'
                          ' required key not provided')
-        self.assertEqual(400, shorten_response_with_token_auth.status_code)
 
     def test_registered_user_with_vanity_string(self):
         """Test that registered users can shorten urls with vanity_string."""
         self.user.save()
-        email_header = self.api_email_auth_headers('ichiato@yahoo.com',
-                                                   'password')
-        token_response = self.client.get(url_for('api.get_token'),
-                                         headers=email_header)
-        json_token_response = json.loads(token_response.data.decode('utf-8'))
-        token = json_token_response['token']
+        token = self.user.generate_auth_token(60).decode('ascii')
         token_header = self.api_token_auth_headers(token)
-        shorten_response_with_token_auth = self.client.post(
-                            url_for('api.shorten_url'), headers=token_header,
-                            data=self.post_data3)
-        json_shorten_response_with_token = json.loads(
-            shorten_response_with_token_auth.data.decode('utf-8'))
-        short_url = json_shorten_response_with_token['short_url']
+        response = self.client.post(url_for('api.shorten_url'),
+                                    headers=token_header, data=self.post_data3)
+        json_response = json.loads(response.data.decode('utf-8'))
+        short_url = json_response['short_url']
+        self.assertEqual(201, response.status_code)
         self.assertIn('python', short_url)
-        self.assertIn('short_url', json_shorten_response_with_token)
-        self.assertEqual(201, shorten_response_with_token_auth.status_code)
+        self.assertIn('short_url', json_response)
 
     def test_user_shortening_same_url_twice(self):
         """Test that shortening the same url twice will return same url."""
         self.user.save()
-        email_header = self.api_email_auth_headers('ichiato@yahoo.com',
-                                                   'password')
-        token_response = self.client.get(url_for('api.get_token'),
-                                         headers=email_header)
-        json_token_response = json.loads(token_response.data.decode('utf-8'))
-        token = json_token_response['token']
+        token = self.user.generate_auth_token(60).decode('ascii')
         token_header = self.api_token_auth_headers(token)
-        shorten_response_with_token_auth = self.client.post(
-                            url_for('api.shorten_url'), headers=token_header,
-                            data=self.post_data)
-        shorten_response_with_token_auth2 = self.client.post(
-                            url_for('api.shorten_url'), headers=token_header,
-                            data=self.post_data)
-        json_shorten_response_with_token = json.loads(
-            shorten_response_with_token_auth.data.decode('utf-8'))
-        json_shorten_response_with_token2 = json.loads(
-            shorten_response_with_token_auth2.data.decode('utf-8'))
-        short_url = json_shorten_response_with_token['short_url']
-        short_url2 = json_shorten_response_with_token2['short_url']
+        response = self.client.post(url_for('api.shorten_url'),
+                                    headers=token_header, data=self.post_data)
+        response2 = self.client.post(url_for('api.shorten_url'),
+                                     headers=token_header, data=self.post_data)
+        json_response = json.loads(response.data.decode('utf-8'))
+        json_response2 = json.loads(response2.data.decode('utf-8'))
+        short_url = json_response['short_url']
+        short_url2 = json_response2['short_url']
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(201, response2.status_code)
         self.assertEqual(short_url, short_url2)
-        self.assertEqual(201, shorten_response_with_token_auth.status_code)
-        self.assertEqual(201, shorten_response_with_token_auth2.status_code)
 
     def test_user_shortening_with_existing_vanity_string(self):
         """Test that vanity_string must always be unique in the database."""
@@ -181,26 +157,17 @@ class ApiShorten(unittest.TestCase):
             "url": "http://www.google.com",
             "vanity_string": "python"
             })
-        email_header = self.api_email_auth_headers('ichiato@yahoo.com',
-                                                   'password')
-        token_response = self.client.get(url_for('api.get_token'),
-                                         headers=email_header)
-        json_token_response = json.loads(token_response.data.decode('utf-8'))
-        token = json_token_response['token']
+        token = self.user.generate_auth_token(60).decode('ascii')
         token_header = self.api_token_auth_headers(token)
-        shorten_response_with_token_auth = self.client.post(
-                            url_for('api.shorten_url'), headers=token_header,
-                            data=self.post_data3)
-        shorten_response_with_token_auth2 = self.client.post(
-                            url_for('api.shorten_url'), headers=token_header,
-                            data=post_data4)
-        json_shorten_response_with_token = json.loads(
-            shorten_response_with_token_auth.data.decode('utf-8'))
-        json_shorten_response_with_token2 = json.loads(
-            shorten_response_with_token_auth2.data.decode('utf-8'))
-        msg = json_shorten_response_with_token2['message']
-        self.assertIn('short_url', json_shorten_response_with_token)
-        self.assertEqual(201, shorten_response_with_token_auth.status_code)
-        self.assertEqual(400, shorten_response_with_token_auth2.status_code)
+        response = self.client.post(url_for('api.shorten_url'),
+                                    headers=token_header, data=self.post_data3)
+        response2 = self.client.post(url_for('api.shorten_url'),
+                                     headers=token_header, data=post_data4)
+        json_response = json.loads(response.data.decode('utf-8'))
+        json_response2 = json.loads(response2.data.decode('utf-8'))
+        msg = json_response2['message']
+        self.assertEqual(201, response.status_code)
+        self.assertEqual(400, response2.status_code)
+        self.assertIn('short_url', json_response)
         self.assertEqual(msg, 'The request is invalid or inconsistent.'
                          ' Vanity string already in use. Pick another.')
