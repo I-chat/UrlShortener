@@ -1,0 +1,51 @@
+.logout {
+  width: 200px;
+  top: 50px;
+  float: right;
+  right: -55px;
+  left: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.176);
+  max-width: 300px;
+  min-width: 160px;
+  padding: 0 0;
+  border-radius: 0;
+  opacity: 0.9;
+}
+.username{
+  margin-left: 50px;
+}
+.dropdown-menu.logout > li > a:hover {
+  background-color: #F7F8F9 !important;
+  color: #2E2E2E;
+  border-bottom: 1px solid #688a7e !important;
+}
+li.eborder-top {
+  padding-top: 0;
+}
+.log-arrow-up {
+  background: url(../img/arrow-up.png) no-repeat;
+  width: 20px;
+  height: 11px;
+  position: absolute;
+  right: 20px;
+  top: -10px;
+}
+li a {
+  width: 200px;
+  height: 52px;
+  border-bottom: 1px solid #EBEBEB !important;
+  padding: 15px 10px !important;
+}
+.dropdown-toggle {
+  font-size: 20px;
+  right: -55px;
+  color: rgb(59, 180, 208);
+  border-bottom: 0 !important;
+}
+.dropdown-toggle:hover {
+  color: rgb(59, 180, 208) !important;
+  background-color: transparent !important;
+}
+.dropdown-toggle:focus {
+  background-color: transparent !important;
+}

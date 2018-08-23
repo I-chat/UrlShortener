@@ -1,0 +1,29 @@
+{% extends "index.html" %}
+{% block head %}
+{{ super() }}
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/dropdown.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/sidebar.css') }}">
+{% endblock %}
+{% block content %}
+  <aside>
+    <div id="sidebar"  class="nav-collapse ">
+      <!-- sidebar menu start-->
+      <ul class="sidebar-menu">
+        <li class="active">
+          <a class="" href="index.html">
+                    <i class="icon_house_alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="sub-menu">
+                <a class="" href="basic_table.html">
+                  <i class="icon_table"></i>
+                  <span>Short URLs</span>
+                  <span class="menu-arrow arrow_carrot-right"></span>
+                </a>
+            </li>
+        <!-- sidebar menu end-->
+    </div>
+</aside>
+<!--sidebar end-->
+{% endblock %}

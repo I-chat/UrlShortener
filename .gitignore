@@ -1,6 +1,7 @@
 # Folders #
 __pycache__
 migrations
+tmp
 
 # Logs and databases #
 ######################

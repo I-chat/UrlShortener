@@ -1,0 +1,226 @@
+{% extends "bootstrap/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% block title %}PicoUrl{% endblock %}
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/index.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/dropdown.css') }}">
+<link href="https://fonts.googleapis.com/css?family=Happy+Monkey" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='font-awesome-4.7.0/css/font-awesome.min.css') }}">
+{% endblock %}
+{% block navbar %}
+<nav class="navbar">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"><span class="blue">Pico</span><span class="green">Url</span></a>
+    </div>
+    {% if current_user.is_authenticated %}
+      <div class="top-nav notification-row">
+      <!-- notificatoin dropdown start-->
+        <ul class="nav pull-right top-menu">
+        <!-- user login dropdown start-->
+          <li class="dropdown">
+            <a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                <span class="username">{{ current_user.first_name.capitalize()}} {{ current_user.last_name.capitalize() }}</span>
+                <b class="caret"></b>
+            </a>
+            <ul class="dropdown-menu logout">
+                <div class="log-arrow-up"></div>
+                <li class="eborder-top">
+                    <a href="#"><i class="icon_profile"></i> My Profile</a>
+                </li>
+                <li>
+                    <a href="/auth/logout"><i class="icon_key_alt"></i> Log Out</a>
+                </li>
+                <li>
+                    <a href="documentation.html"><i class="icon_key_alt"></i>API Documentation</a>
+                </li>
+            </ul>
+          </li>
+        <!-- user login dropdown end -->
+        </ul>
+      </div>
+    {% else %}
+      <!-- Trigger the registration and sign in modals with a button -->
+      <button type="button" class="btn navbar-btn" data-toggle="modal" data-target="#modal-login">Login</button>
+      <button type="button" class="btn register navbar-btn" data-toggle="modal" data-target="#modal-register">Sign up</button>
+
+      <!-- Modal Register -->
+      <div class="modal fade" id="modal-register" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog width" role="document">
+          <!--Content-->
+          <div class="modal-content">
+            <!--Header-->
+            <div class="modal-header flex-column">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <h3 class="w-100"><i class="fa fa-user"></i> Register with:</h3>
+              <div class="flex-row">
+                <a href="" class="btn-floating btn-gplus btn-small"><i class="fa fa-google-plus"></i></a>
+                <a href="https://www.facebook.com/login" class="btn-floating btn-fb btn-small"><i class="fa fa-facebook"></i></a>
+                <a href="" class="btn-floating btn-tw btn-small"><i class="fa fa-twitter"></i></a>
+              </div>
+            </div>
+            <!--Body-->
+            <div class="modal-body">
+              <div class="input-group input-group-lg">
+                {% with messages = get_flashed_messages(category_filter=["register"]) %}
+                {% if messages %}
+
+                {% for msg in messages %}
+                  <div class="alert alert-warning">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                      {{ msg }}
+                  </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+              </div>
+
+            <form name="stepForm" method="post" action="/auth/signup">
+              {{ register_form.hidden_tag() }}
+              <div class="input-group input-group-lg">
+                <span class="input-group-addon" id="basic-addon1"><i class="fa fa-user"></i></span>
+                {{ register_form.first_name(class_='form-control font', placeholder='Your firstname', required=True) }}
+              </div>
+
+              <div class="input-group input-group-lg">
+                <span class="input-group-addon" id="basic-addon1"><i class="fa fa-user"></i></span>
+                {{ register_form.last_name(class_='form-control font', placeholder='Your lastname', required=True, title="I am here") }}
+              </div>
+
+              <div class="input-group input-group-lg">
+                <span class="input-group-addon padding" id="basic-addon1"><i class="fa fa-envelope prefix"></i></span>
+                {{ register_form.email(class_='form-control font', placeholder='Your email', required=True, type="email") }}
+              </div>
+
+              <div class="input-group input-group-lg">
+                <span class="input-group-addon" id="basic-addon2"><i class="fa fa-lock prefix"></i></span>
+                {{ register_form.password(class_='form-control font', placeholder='Your password', required=True) }}
+              </div>
+
+              <div class="input-group input-group-lg">
+                <span class="input-group-addon" id="basic-addon3"><i class="fa fa-lock prefix"></i></span>
+                {{ register_form.password2(class_='form-control font', placeholder='Your password', required=True) }}
+              </div>
+
+              <div class="input-group input-group-lg">
+                {{ register_form.submit(class_='navbar-btn btn-lg color') }}
+              </div>
+            </form>
+            </div>
+            <!--Footer-->
+            <div class="modal-footer">
+                <div class="options">
+                    <p>Already have an account? <a href="" data-toggle="modal" data-dismiss="modal" data-target="#modal-login">Log in</a></p>
+                </div>
+                <button type="button" class="btn ml-auto color" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        <!--/.Content-->
+        </div>
+      </div>
+      <!-- Modal Login -->
+<div class="modal fade" id="modal-login" tabindex="-2" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog width" role="document">
+        <!--Content-->
+        <div class="modal-content">
+            <!--Header-->
+            <div class="modal-header flex-column">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h3 class="w-100"><i class="fa fa-user"></i> Login</h3>
+            </div>
+            <!--Body-->
+            <div class="modal-body">
+              <div class="input-group input-group-lg">
+                {% with messages = get_flashed_messages(category_filter=["login"]) %}
+                {% if messages %}
+
+                {% for msg in messages %}
+                  <div class="alert alert-warning">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                      {{ msg }}
+                  </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+              </div>
+              <form name="stepForm" method="post" action="/auth/login">
+                {{ register_form.hidden_tag() }}
+                <div class="input-group input-group-lg">
+                    <span class="input-group-addon padding" id="basic-addon1"><i class="fa fa-envelope prefix"></i></span>
+                    {{ login_form.email(class_='form-control font', placeholder='Your email', required=True) }}
+                </div>
+
+                <div class="input-group input-group-lg">
+                    <span class="input-group-addon" id="basic-addon1"><i class="fa fa-lock prefix"></i></span>
+                    {{ login_form.password(class_='form-control font', placeholder='Your password', required=True) }}
+                </div>
+                <div class="input-group input-group-lg">
+                    {{ login_form.submit(class_='navbar-btn btn-lg color') }}
+                </div>
+              </form>
+            </div>
+            <!--Footer-->
+            <div class="modal-footer">
+                <div class="options text-right">
+                    <p>Not a member? <a href="" data-toggle="modal" data-dismiss="modal" data-target="#modal-register">Sign Up</a></p>
+                    <p>Forgot <a href="#">Password?</a></p>
+                </div>
+                <button type="button" class="btn ml-auto color" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+        <!--/.Content-->
+    </div>
+</div>
+{% endif %}
+  </div>
+</nav>
+
+{% endblock %}
+{% block content %}
+  <div class="header-unit">
+    <div id="video-container">
+      <video autoplay loop class="fillWidth" poster="{{ url_for('static', filename='img/background.png') }}">
+        <source src="{{ url_for('static', filename='img/background.mp4') }}" type="video/mp4"/>
+        <source src="{{ url_for('static', filename='img/background.ogv') }}" type="video/ogv"/>
+        <source src="{{ url_for('static', filename='img/background.webm') }}" type="video/webm"/>
+        Your browser does not support the video tag. I suggest you upgrade your browser.
+      </video>
+    </div><!-- end video-container -->
+    <form id="short" name="stepForm" method="post" action="/shorten">
+      {{ short_form.hidden_tag() }}
+      <div class="input-group input-group-lg center">
+          {{ short_form.url(class_='form-control font', type='url', placeholder='Paste a link to shorten it', required=True) }}
+          <span class="input-group-btn">
+            {{ short_form.submit(class_='btn btn-default') }}
+          </span>
+      </div><!-- /input-group -->
+  </form>
+    <div id="drop" class="input-group input-group-lg contain-dropdown center">
+      <span class="contain-span">
+        <a id="result" class="copy-image" href=""></a>
+        <button class="clip btn" data-clipboard-target="#result">
+          <img class="copy-image" src="{{ url_for('static', filename='img/clippy.svg') }}" alt="Copy">
+        </button>
+      </span>
+    </div>
+  </div><!-- end .header-unit -->
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/clipboard/clipboard.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/shorten.js') }}"></script>
+<script>
+  {% if register_flag %}
+    $("#modal-register").modal("show");
+  {% elif login_flag %}
+    $("#modal-login").modal("show");
+  {% elif short_url %}
+    $('#drop').slideDown("slow");
+  {% endif %}
+</script>
+{% endblock %}
